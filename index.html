@@ -32,8 +32,19 @@
         .confirm-btn { display: block; margin: 20px auto; }
         .history { background-color: #2d2d44; padding: 20px; border-radius: 5px; margin: 20px 0; }
         .history h3 { color: #c9a227; margin-bottom: 15px; }
-        .history-list { max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
-        .history-item { padding: 8px; margin: 5px 0; background-color: #1a1a2e; border-radius: 3px; font-family: 'Courier New', monospace; }
+        .history-grid-container { margin-bottom: 15px; }
+        .history-grid-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .history-col-labels { display: flex; justify-content: center; margin-left: 30px; }
+        .history-col-label { width: 40px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
+        .history-row-wrapper { display: flex; align-items: center; }
+        .history-row-label { width: 25px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
+        .history-grid { display: grid; gap: 3px; }
+        .history-cell { width: 40px; height: 40px; background-color: #1a1a2e; border: 1px solid #8b7355; border-radius: 3px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .history-cell.hidden { background-color: #3d3d5c; }
+        .history-cell.revealed { background-color: #1a1a2e; }
+        .history-cell.sphere-revealed { box-shadow: 0 0 8px #9b59b6; border-color: #9b59b6; }
+        .history-cell img { max-width: 85%; max-height: 85%; object-fit: contain; }
+        .history-cell .empty-icon { width: 12px; height: 12px; border: 2px solid #666; border-radius: 50%; }
         .sphere-mode { background-color: #2d2d44; padding: 15px; border-radius: 5px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
         .toggle { position: relative; width: 60px; height: 30px; background-color: #5c4033; border-radius: 15px; cursor: pointer; transition: background-color 0.3s; }
         .toggle.active { background-color: #2e7d32; }
@@ -123,7 +134,7 @@
             </div>
             <div class="history">
                 <h3 data-i18n="history">Cronologia</h3>
-                <div class="history-list" id="history-list"></div>
+                <div class="history-grid-container" id="history-grid-container"></div>
                 <button class="btn" onclick="clearHistory()" data-i18n="clear_history">Cancella</button>
             </div>
             <div class="remaining">
@@ -168,7 +179,7 @@
     <script>
 const IMAGES={key:'img/chiave.png',monster:'img/mostro.png',passage:'img/passaggio.png',potion:'img/pozione.png',chest:'img/scrigno.png',sphere:'img/sfera.png',sword:'img/spada.png',trap:'img/trappola.png'};
 const TEXTS={it:{lang_select:'Seleziona lingua',new_game:'Nuova partita',enter_code:'Inserisci codice',players:'Giocatori',start:'Inizia',game_code:'Codice partita',copy_code:'Copia codice',confirm:'Conferma',close:'Chiudi',show_all:'Mostra schema',show_all_confirm:"Sei sicuro di voler vedere l'intero schema? Questa azione non può essere annullata.",yes:'Sì',cancel:'Annulla',back:'Indietro',new_game_btn:'Nuova partita',history:'Cronologia',clear_history:'Cancella',sphere_mode:'Modalità sfera',sphere_mode_on:'Attiva',sphere_mode_off:'Disattiva',remaining:'Rimanenti',empty_cell:'Casella vuota',invalid_code:'Codice non valido',select_cell:'Seleziona una casella',discovered_via_sphere:'(sfera)',monster:'Mostro',chest:'Scrigno',key:'Chiave',sword:'Spada',potion:'Pozione',trap:'Trappola',passage:'Passaggio segreto',sphere:'Sfera',empty:'Vuoto'},en:{lang_select:'Select language',new_game:'New game',enter_code:'Enter code',players:'Players',start:'Start',game_code:'Game code',copy_code:'Copy code',confirm:'Confirm',close:'Close',show_all:'Show map',show_all_confirm:'Are you sure you want to see the entire map? This action cannot be undone.',yes:'Yes',cancel:'Cancel',back:'Back',new_game_btn:'New game',history:'History',clear_history:'Clear',sphere_mode:'Sphere mode',sphere_mode_on:'On',sphere_mode_off:'Off',remaining:'Remaining',empty_cell:'Empty cell',invalid_code:'Invalid code',select_cell:'Select a cell',discovered_via_sphere:'(sphere)',monster:'Monster',chest:'Chest',key:'Key',sword:'Sword',potion:'Potion',trap:'Trap',passage:'Secret passage',sphere:'Sphere',empty:'Empty'}};
-let gameState={language:'it',playerCount:0,code:'',grid:[],gridSize:0,selectedCol:-1,selectedRow:-1,sphereMode:false,history:[],remaining:{}};
+let gameState={language:'it',playerCount:0,code:'',grid:[],gridSize:0,selectedCol:-1,selectedRow:-1,sphereMode:false,history:[],revealed:{},remaining:{}};
 function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 const ELEMENT_COUNTS={2:{monster:4,chest:5,key:5,sword:4,potion:5,trap:3,passage:2,sphere:2,empty:6},3:{monster:6,chest:7,key:7,sword:6,potion:6,trap:4,passage:2,sphere:2,empty:9},4:{monster:8,chest:9,key:9,sword:8,potion:7,trap:5,passage:2,sphere:2,empty:14}};
 const GRID_SIZES={2:6,3:7,4:8};
@@ -179,8 +190,8 @@ function showEnterCode(){document.getElementById('code-input').value='';document
 function selectPlayers(a){gameState.playerCount=a;document.querySelectorAll('.player-btn').forEach(b=>b.classList.remove('selected'));event.target.classList.add('selected')}
 function setLanguage(a){gameState.language=a;document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');updateLanguage()}
 function updateLanguage(){const a=TEXTS[gameState.language];document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(a[k])el.textContent=a[k]})}
-function startNewGame(){if(!gameState.playerCount)return;gameState.code=String(Math.floor(Math.random()*1000000)).padStart(6,'0');generateDungeon(parseInt(gameState.code),gameState.playerCount);initGameUI();showScreen('screen-game')}
-function loadGame(){const c=document.getElementById('code-input').value;if(c.length!==6||!/^\d+$/.test(c)){document.getElementById('error-message').textContent=TEXTS[gameState.language].invalid_code;return}gameState.code=c;const s=parseInt(c);const r=mulberry32(s);gameState.playerCount=Math.floor(r()*3)+2;generateDungeon(s,gameState.playerCount);initGameUI();showScreen('screen-game')}
+function startNewGame(){if(!gameState.playerCount)return;const seed=Math.floor(Math.random()*100000);gameState.code=String(gameState.playerCount)+String(seed).padStart(5,'0');generateDungeon(seed,gameState.playerCount);initGameUI();showScreen('screen-game')}
+function loadGame(){const c=document.getElementById('code-input').value;if(c.length!==6||!/^\d+$/.test(c)){document.getElementById('error-message').textContent=TEXTS[gameState.language].invalid_code;return}const playerDigit=parseInt(c.charAt(0));if(playerDigit<2||playerDigit>4){document.getElementById('error-message').textContent=TEXTS[gameState.language].invalid_code;return}gameState.code=c;gameState.playerCount=playerDigit;const seed=parseInt(c.substring(1));generateDungeon(seed,gameState.playerCount);initGameUI();showScreen('screen-game')}
 function validateAllConstraints(grid,size,counts){
     // Raccoglie posizioni di tutti gli elementi
     const elements={sphere:[],passage:[],potion:[],trap:[],chest:[],key:[],sword:[],monster:[],empty:[]};
@@ -395,14 +406,43 @@ function generateDungeon(seed,playerCount){
     console.error('Generazione fallita dopo '+maxMainAttempts+' tentativi, riprovo con seed modificato');
     generateDungeon(seed+999999999,playerCount);
 }
-function initGameUI(){document.getElementById('current-code').textContent=gameState.code;const size=gameState.gridSize;const colButtons=document.getElementById('col-buttons');const rowButtons=document.getElementById('row-buttons');colButtons.innerHTML='';rowButtons.innerHTML='';for(let i=0;i<size;i++){const colBtn=document.createElement('button');colBtn.className='btn coord-btn';colBtn.textContent=String.fromCharCode(65+i);colBtn.onclick=()=>selectCol(i);colButtons.appendChild(colBtn);const rowBtn=document.createElement('button');rowBtn.className='btn coord-btn';rowBtn.textContent=i+1;rowBtn.onclick=()=>selectRow(i);rowButtons.appendChild(rowBtn)}gameState.selectedCol=-1;gameState.selectedRow=-1;updateSelection();gameState.history=[];updateHistory();gameState.sphereMode=false;updateSphereToggle();updateRemaining()}
+function initGameUI(){document.getElementById('current-code').textContent=gameState.code;const size=gameState.gridSize;const colButtons=document.getElementById('col-buttons');const rowButtons=document.getElementById('row-buttons');colButtons.innerHTML='';rowButtons.innerHTML='';for(let i=0;i<size;i++){const colBtn=document.createElement('button');colBtn.className='btn coord-btn';colBtn.textContent=String.fromCharCode(65+i);colBtn.onclick=()=>selectCol(i);colButtons.appendChild(colBtn);const rowBtn=document.createElement('button');rowBtn.className='btn coord-btn';rowBtn.textContent=i+1;rowBtn.onclick=()=>selectRow(i);rowButtons.appendChild(rowBtn)}gameState.selectedCol=-1;gameState.selectedRow=-1;updateSelection();gameState.history=[];gameState.revealed={};updateHistory();gameState.sphereMode=false;updateSphereToggle();updateRemaining()}
 function selectCol(col){gameState.selectedCol=col;document.querySelectorAll('#col-buttons .coord-btn').forEach((btn,idx)=>btn.classList.toggle('selected',idx===col));updateSelection()}
 function selectRow(row){gameState.selectedRow=row;document.querySelectorAll('#row-buttons .coord-btn').forEach((btn,idx)=>btn.classList.toggle('selected',idx===row));updateSelection()}
 function updateSelection(){const d=document.getElementById('selection-display');if(gameState.selectedCol>=0&&gameState.selectedRow>=0){const col=String.fromCharCode(65+gameState.selectedCol);const row=gameState.selectedRow+1;d.textContent=`${col}${row}`}else d.textContent='-'}
-function revealCell(){if(gameState.selectedCol<0||gameState.selectedRow<0)return;const element=gameState.grid[gameState.selectedRow][gameState.selectedCol];const texts=TEXTS[gameState.language];const img=document.getElementById('reveal-img');const name=document.getElementById('reveal-name');if(element==='empty'){img.src='';img.style.display='none';name.textContent=texts.empty_cell}else{img.src=IMAGES[element];img.style.display='block';name.textContent=texts[element]}document.getElementById('modal-reveal').classList.add('active');const col=String.fromCharCode(65+gameState.selectedCol);const row=gameState.selectedRow+1;gameState.history.unshift({coord:`${col}${row}`,element:texts[element]||texts.empty_cell,sphere:gameState.sphereMode});updateHistory();if(gameState.remaining[element]>0){gameState.remaining[element]--;updateRemaining()}}
+function revealCell(){if(gameState.selectedCol<0||gameState.selectedRow<0)return;const r=gameState.selectedRow,c=gameState.selectedCol;const element=gameState.grid[r][c];const texts=TEXTS[gameState.language];const img=document.getElementById('reveal-img');const name=document.getElementById('reveal-name');if(element==='empty'){img.src='';img.style.display='none';name.textContent=texts.empty_cell}else{img.src=IMAGES[element];img.style.display='block';name.textContent=texts[element]}document.getElementById('modal-reveal').classList.add('active');const coordKey=`${r},${c}`;const wasRevealed=gameState.revealed[coordKey];gameState.revealed[coordKey]={element,sphere:gameState.sphereMode};updateHistory();if(!wasRevealed&&gameState.remaining[element]>0){gameState.remaining[element]--;updateRemaining()}}
 function closeReveal(){document.getElementById('modal-reveal').classList.remove('active')}
-function updateHistory(){const list=document.getElementById('history-list');const texts=TEXTS[gameState.language];list.innerHTML='';gameState.history.forEach(item=>{const div=document.createElement('div');div.className='history-item';const sphereText=item.sphere?` ${texts.discovered_via_sphere}`:'';div.textContent=`${item.coord}: ${item.element}${sphereText}`;list.appendChild(div)})}
-function clearHistory(){gameState.history=[];updateHistory()}
+function updateHistory(){
+    const container=document.getElementById('history-grid-container');
+    const size=gameState.gridSize;
+    if(!size){container.innerHTML='';return}
+    let html='<div class="history-grid-wrapper">';
+    html+='<div class="history-col-labels">';
+    for(let c=0;c<size;c++)html+=`<div class="history-col-label">${String.fromCharCode(65+c)}</div>`;
+    html+='</div>';
+    for(let r=0;r<size;r++){
+        html+='<div class="history-row-wrapper">';
+        html+=`<div class="history-row-label">${r+1}</div>`;
+        html+=`<div class="history-grid" style="grid-template-columns:repeat(${size},40px)">`;
+        for(let c=0;c<size;c++){
+            const key=`${r},${c}`;
+            const rev=gameState.revealed[key];
+            if(rev){
+                const sphereClass=rev.sphere?' sphere-revealed':'';
+                html+=`<div class="history-cell revealed${sphereClass}">`;
+                if(rev.element==='empty'){html+='<div class="empty-icon"></div>'}
+                else{html+=`<img src="${IMAGES[rev.element]}" alt="${rev.element}">`}
+                html+='</div>';
+            }else{
+                html+='<div class="history-cell hidden">?</div>';
+            }
+        }
+        html+='</div></div>';
+    }
+    html+='</div>';
+    container.innerHTML=html;
+}
+function clearHistory(){gameState.history=[];gameState.revealed={};updateHistory()}
 function toggleSphere(){gameState.sphereMode=!gameState.sphereMode;updateSphereToggle()}
 function updateSphereToggle(){document.getElementById('sphere-toggle').classList.toggle('active',gameState.sphereMode)}
 function updateRemaining(){const grid=document.getElementById('remaining-grid');const texts=TEXTS[gameState.language];grid.innerHTML='';const elements=['monster','chest','key','sword','potion','trap'];elements.forEach(elem=>{if(gameState.remaining[elem]!==undefined){const div=document.createElement('div');div.className='remaining-item';div.innerHTML=`<img src="${IMAGES[elem]}" alt="${texts[elem]}"><span class="remaining-count">${gameState.remaining[elem]}</span>`;grid.appendChild(div)}})}
