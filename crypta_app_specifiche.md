@@ -4,7 +4,7 @@
 
 App web companion per il gioco da tavolo **Crypta**. L'app genera la disposizione segreta degli elementi del dungeon e permette ai giocatori di interrogare le caselle durante la partita.
 
-**Requisito fondamentale**: file HTML unico e autocontenuto, con tutte le immagini incorporate in base64 e nessuna dipendenza esterna.
+**Requisito fondamentale**: file HTML unico e autocontenuto, con tutte le immagini collegate a quelle presenti nel repository, non è necessario convertirle in base64.
 
 ---
 
@@ -13,7 +13,6 @@ App web companion per il gioco da tavolo **Crypta**. L'app genera la disposizion
 ### Tecnologia
 - HTML5 + CSS3 + JavaScript vanilla
 - Nessun framework o libreria esterna
-- Immagini incorporate come data URI (base64)
 - Responsive design (funziona su smartphone e tablet)
 - Nessun salvataggio lato server (tutto client-side)
 
@@ -431,7 +430,7 @@ function generateDungeon(seed, playerCount) {
 
 ### Immagini elementi
 
-Le seguenti immagini devono essere convertite in base64 e incorporate nel file HTML:
+Le seguenti immagini nella cartella img devono essere usate nel file HTML:
 
 | Elemento | File | Uso |
 |----------|------|-----|
@@ -591,9 +590,7 @@ Atmosfera **dungeon fantasy**: colori scuri, sensazione di esplorazione sotterra
 
 3. **Accessibilità**: contrasto sufficiente, pulsanti grandi, testo leggibile
 
-4. **Performance**: le immagini base64 aumentano la dimensione del file, ma garantiscono funzionamento offline
-
-5. **Edge cases**:
+4. **Edge cases**:
    - Codice con zeri iniziali (es. 007234)
    - Casella già interrogata (mostrare comunque, aggiungere a cronologia)
    - Griglia vuota dopo aver scoperto tutto
