@@ -4,13 +4,12 @@
 
 **Crypta** is a companion web app for the board game "Crypta" by Luca Di Gialleonardo. The app generates a secret dungeon layout and allows players to query cells during gameplay.
 
-**Critical Constraint**: This must be a **single, self-contained HTML file** with all images embedded as base64 and **no external dependencies**.
+**Critical Constraint**: This must be a **single, self-contained HTML file**.
 
 ## Technology Stack
 
 - **HTML5 + CSS3 + Vanilla JavaScript**
 - No frameworks or external libraries allowed
-- Images embedded as data URIs (base64)
 - Responsive design (works on smartphones and tablets)
 - Client-side only (no server-side storage)
 
@@ -154,7 +153,7 @@ Dark dungeon fantasy atmosphere with colors suggesting underground exploration.
 
 ## Game Assets
 
-### Required Images (to be embedded as base64)
+### Required Images
 
 - `chiave.png` (Key)
 - `mostro.png` (Monster)
@@ -207,7 +206,6 @@ Empty cells use a CSS/SVG icon (e.g., gray empty circle).
 1. **Generation Testing**: Verify algorithm generates valid layouts in < 1 second
 2. **Seed Validation**: Same code must produce identical layout on any device
 3. **Accessibility**: Sufficient contrast, large buttons, readable text
-4. **Performance**: Base64 images increase file size but ensure offline functionality
 
 ### Edge Cases to Handle
 
@@ -221,7 +219,6 @@ Empty cells use a CSS/SVG icon (e.g., gray empty circle).
 Before considering the app complete, verify:
 
 - [ ] Single HTML file with no external dependencies
-- [ ] All images embedded as base64
 - [ ] Works offline
 - [ ] Same seed = same layout (cross-device tested)
 - [ ] All placement constraints properly enforced
@@ -268,7 +265,6 @@ When working on this project:
 
 1. **NEVER** suggest npm packages, frameworks, or external libraries
 2. **NEVER** split code into multiple files
-3. **ALWAYS** embed images as base64 data URIs
 4. **ALWAYS** test that the same seed produces the same layout
 5. **ALWAYS** maintain bilingual support (IT/EN)
 6. **ALWAYS** respect the placement constraints exactly as specified
