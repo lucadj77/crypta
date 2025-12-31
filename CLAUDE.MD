@@ -68,10 +68,10 @@ The 6-digit game code (000000-999999) serves as the seed for a pseudo-random num
 3. **Potions** (5-7) - max one per row and column (like chess queens)
 4. **Traps** (3-5) - never on edges, never adjacent to each other
 5. **Chests** (5-9) - never adjacent to each other
-6. **Keys** (5-9) - must be within 3 cells (Chebyshev distance) of at least one chest
+6. **Keys** (5-9) - must be within 2 cells (Chebyshev distance) of at least one chest
 7. **Swords** (4-8) - never adjacent to keys
 8. **Monsters** (4-8) - never adjacent to each other
-9. **Empty cells** (remaining) - must form blocks of at least 4 orthogonally connected cells
+9. **Empty cells** (remaining) - each must be adjacent to both a chest and a monster
 
 ### Placement Constraints Details
 
@@ -97,7 +97,7 @@ The 6-digit game code (000000-999999) serves as the seed for a pseudo-random num
 - Never adjacent to each other (8 directions)
 
 #### Keys
-- Each key must be within Chebyshev distance ≤ 3 from at least one chest
+- Each key must be within Chebyshev distance ≤ 2 from at least one chest
 - Chebyshev distance = `max(|Δcol|, |Δrow|)`
 
 #### Swords
@@ -107,9 +107,10 @@ The 6-digit game code (000000-999999) serves as the seed for a pseudo-random num
 - Never adjacent to each other (8 directions)
 
 #### Empty Cells
-- Must form blocks of at least 4 orthogonally connected cells
+- Every empty cell must be adjacent (including diagonals) to both at least one chest AND at least one monster
+- Adjacency includes all 8 directions (orthogonal + diagonal)
 - Verified after all other elements are placed
-- If validation fails, regenerate
+- If validation fails, regenerate with modified seed
 
 ### Failure Handling
 
@@ -299,10 +300,10 @@ Companion app v1.0
 | Potions | Max 1 per row/column |
 | Traps | Not on edges, not adjacent |
 | Chests | Not adjacent |
-| Keys | Within 3 cells of ≥1 chest |
+| Keys | Within 2 cells of ≥1 chest |
 | Swords | Not adjacent to keys |
 | Monsters | Not adjacent |
-| Empty | Blocks of ≥4 connected cells |
+| Empty | Adjacent to ≥1 chest AND ≥1 monster |
 
 ## Distance Formulas
 

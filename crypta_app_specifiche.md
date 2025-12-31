@@ -317,20 +317,20 @@ Bordi vietati (griglia 6x6):
 - Mai adiacenti tra loro (8 direzioni)
 
 #### Chiavi
-- Ogni chiave deve essere entro 3 caselle da almeno uno scrigno
-- Distanza di Chebyshev ≤ 3 (max tra |Δcol| e |Δrow|)
+- Ogni chiave deve essere entro 2 caselle da almeno uno scrigno
+- Distanza di Chebyshev ≤ 2 (max tra |Δcol| e |Δrow|)
 
 ```
 Esempio: scrigno in D4
-Area valida per chiavi (distanza ≤ 3):
+Area valida per chiavi (distanza ≤ 2):
   A B C D E F G
-1 . ✓ ✓ ✓ ✓ ✓ .
-2 ✓ ✓ ✓ ✓ ✓ ✓ ✓
-3 ✓ ✓ ✓ ✓ ✓ ✓ ✓
-4 ✓ ✓ ✓ 📦 ✓ ✓ ✓
-5 ✓ ✓ ✓ ✓ ✓ ✓ ✓
-6 ✓ ✓ ✓ ✓ ✓ ✓ ✓
-7 . ✓ ✓ ✓ ✓ ✓ .
+1 . . . . . . .
+2 . ✓ ✓ ✓ ✓ ✓ .
+3 . ✓ ✓ ✓ ✓ ✓ .
+4 . ✓ ✓ 📦 ✓ ✓ .
+5 . ✓ ✓ ✓ ✓ ✓ .
+6 . ✓ ✓ ✓ ✓ ✓ .
+7 . . . . . . .
 ```
 
 #### Spade
@@ -340,11 +340,21 @@ Area valida per chiavi (distanza ≤ 3):
 - Mai adiacenti tra loro (8 direzioni)
 
 #### Vuoti
-- Le celle vuote devono formare blocchi di almeno 4 celle ortogonalmente connesse
-- Non è necessario che tutti i vuoti siano in un unico blocco
-- Ogni vuoto deve avere almeno 3 altri vuoti raggiungibili ortogonalmente (stesso blocco)
+- Ogni cella vuota deve essere adiacente (incluse le diagonali) sia a uno scrigno sia a un mostro
+- Adjacenza include tutte le 8 direzioni (ortogonali + diagonali)
 
-**Nota**: questo vincolo è verificato a posteriori. Se dopo aver piazzato tutti gli elementi i vuoti non formano blocchi validi, si rigenera.
+```
+Esempio valido:
+  A B C D
+1 📦 . 👹 .
+2 . . . 📦
+3 👹 . . .
+
+Il vuoto in B1 è adiacente a 📦(A1) e 👹(C1) ✓
+Il vuoto in B2 è adiacente a 📦(C2) e 👹(A3) ✓
+```
+
+**Nota**: questo vincolo è verificato a posteriori. Se dopo aver piazzato tutti gli elementi i vuoti non soddisfano il vincolo, si rigenera.
 
 ### Gestione fallimenti
 
