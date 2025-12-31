@@ -28,7 +28,114 @@
         const ELEMENT_COUNTS={2:{monster:4,chest:5,key:5,sword:4,potion:5,trap:3,passage:2,sphere:2,empty:6},3:{monster:6,chest:7,key:7,sword:6,potion:6,trap:4,passage:2,sphere:2,empty:9},4:{monster:8,chest:9,key:9,sword:8,potion:7,trap:5,passage:2,sphere:2,empty:14}};
         const GRID_SIZES={2:6,3:7,4:8};
 
-        function generateDungeon(seed,playerCount){let mainAttempts=0;while(mainAttempts<100){const random=mulberry32(seed+mainAttempts*1000000);const size=GRID_SIZES[playerCount];let grid=Array(size).fill(0).map(()=>Array(size).fill('empty'));const counts=ELEMENT_COUNTS[playerCount];function getEmptyCells(){const cells=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='empty')cells.push({r,c});return cells}function isAdjacent(r1,c1,r2,c2){return Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1&&!(r1===r2&&c1===c2)}let spherePlaced=0,attempts=0;while(spherePlaced<2&&attempts<1000){attempts++;const diagonal=Math.floor(random()*(2*size-1))-(size-1);const diagonalCells=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(c-r===diagonal&&grid[r][c]==='empty')diagonalCells.push({r,c});if(diagonalCells.length>=2){const idx1=Math.floor(random()*diagonalCells.length);let idx2;do{idx2=Math.floor(random()*diagonalCells.length)}while(idx2===idx1);grid[diagonalCells[idx1].r][diagonalCells[idx1].c]='sphere';grid[diagonalCells[idx2].r][diagonalCells[idx2].c]='sphere';spherePlaced=2}}let passagePlaced=0;attempts=0;const passages=[];while(passagePlaced<2&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(passagePlaced===0){grid[cell.r][cell.c]='passage';passages.push(cell);passagePlaced++}else{const dist=Math.abs(cell.r-passages[0].r)+Math.abs(cell.c-passages[0].c);if(dist>=4){grid[cell.r][cell.c]='passage';passagePlaced++}}}const potionRows=new Set(),potionCols=new Set();let potionPlaced=0;attempts=0;while(potionPlaced<counts.potion&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(!potionRows.has(cell.r)&&!potionCols.has(cell.c)){grid[cell.r][cell.c]='potion';potionRows.add(cell.r);potionCols.add(cell.c);potionPlaced++}}const traps=[];let trapPlaced=0;attempts=0;while(trapPlaced<counts.trap&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(cell.r>0&&cell.r<size-1&&cell.c>0&&cell.c<size-1){let adjacent=false;for(const trap of traps)if(isAdjacent(cell.r,cell.c,trap.r,trap.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='trap';traps.push(cell);trapPlaced++}}}const chests=[];let chestPlaced=0;attempts=0;while(chestPlaced<counts.chest&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacent=false;for(const chest of chests)if(isAdjacent(cell.r,cell.c,chest.r,chest.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='chest';chests.push(cell);chestPlaced++}}let keyPlaced=0;attempts=0;while(keyPlaced<counts.key&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];for(const chest of chests){const dist=Math.max(Math.abs(cell.r-chest.r),Math.abs(cell.c-chest.c));if(dist<=2){grid[cell.r][cell.c]='key';keyPlaced++;break}}}const keys=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='key')keys.push({r,c});let swordPlaced=0;attempts=0;while(swordPlaced<counts.sword&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacentToKey=false;for(const key of keys)if(isAdjacent(cell.r,cell.c,key.r,key.c)){adjacentToKey=true;break}if(!adjacentToKey){grid[cell.r][cell.c]='sword';swordPlaced++}}const monsters=[];let monsterPlaced=0;attempts=0;while(monsterPlaced<counts.monster&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacent=false;for(const monster of monsters)if(isAdjacent(cell.r,cell.c,monster.r,monster.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='monster';monsters.push(cell);monsterPlaced++}}let validEmpty=true;for(let r=0;r<size;r++){for(let c=0;c<size;c++){if(grid[r][c]==='empty'){let hasChest=false;let hasMonster=false;for(let dr=-1;dr<=1;dr++){for(let dc=-1;dc<=1;dc++){if(dr===0&&dc===0)continue;const nr=r+dr,nc=c+dc;if(nr>=0&&nr<size&&nc>=0&&nc<size){if(grid[nr][nc]==='chest')hasChest=true;if(grid[nr][nc]==='monster')hasMonster=true}}}if(!hasChest||!hasMonster){validEmpty=false;break}}if(!validEmpty)break}}if(validEmpty){return {grid,size}}mainAttempts++}return {grid,size}}
+        function validateAllConstraints(grid,size,counts){
+            const elements={sphere:[],passage:[],potion:[],trap:[],chest:[],key:[],sword:[],monster:[],empty:[]};
+            for(let r=0;r<size;r++)for(let c=0;c<size;c++)elements[grid[r][c]].push({r,c});
+            if(elements.sphere.length!==2)return{valid:false,reason:'sphere count'};
+            if(elements.passage.length!==2)return{valid:false,reason:'passage count'};
+            if(elements.potion.length!==counts.potion)return{valid:false,reason:'potion count'};
+            if(elements.trap.length!==counts.trap)return{valid:false,reason:'trap count'};
+            if(elements.chest.length!==counts.chest)return{valid:false,reason:'chest count'};
+            if(elements.key.length!==counts.key)return{valid:false,reason:'key count'};
+            if(elements.sword.length!==counts.sword)return{valid:false,reason:'sword count'};
+            if(elements.monster.length!==counts.monster)return{valid:false,reason:'monster count'};
+            if(elements.empty.length!==counts.empty)return{valid:false,reason:'empty count'};
+            function isAdjacent(r1,c1,r2,c2){return Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1&&!(r1===r2&&c1===c2)}
+            const s=elements.sphere;
+            if(s[0].c-s[0].r!==s[1].c-s[1].r)return{valid:false,reason:'spheres not on same diagonal'};
+            const p=elements.passage;
+            if(Math.abs(p[0].r-p[1].r)+Math.abs(p[0].c-p[1].c)<4)return{valid:false,reason:'passages too close'};
+            const potionRows=new Set(),potionCols=new Set();
+            for(const pot of elements.potion){
+                if(potionRows.has(pot.r)||potionCols.has(pot.c))return{valid:false,reason:'potions in same row/col'};
+                potionRows.add(pot.r);potionCols.add(pot.c);
+            }
+            for(const trap of elements.trap){
+                if(trap.r===0||trap.r===size-1||trap.c===0||trap.c===size-1)return{valid:false,reason:'trap on edge'};
+                for(const other of elements.trap){
+                    if(trap!==other&&isAdjacent(trap.r,trap.c,other.r,other.c))return{valid:false,reason:'traps adjacent'};
+                }
+            }
+            for(const chest of elements.chest){
+                for(const other of elements.chest){
+                    if(chest!==other&&isAdjacent(chest.r,chest.c,other.r,other.c))return{valid:false,reason:'chests adjacent'};
+                }
+            }
+            for(const key of elements.key){
+                let nearChest=false;
+                for(const chest of elements.chest){
+                    if(Math.max(Math.abs(key.r-chest.r),Math.abs(key.c-chest.c))<=2){nearChest=true;break}
+                }
+                if(!nearChest)return{valid:false,reason:'key not near chest'};
+            }
+            for(const sword of elements.sword){
+                for(const key of elements.key){
+                    if(isAdjacent(sword.r,sword.c,key.r,key.c))return{valid:false,reason:'sword adjacent to key'};
+                }
+            }
+            for(const monster of elements.monster){
+                for(const other of elements.monster){
+                    if(monster!==other&&isAdjacent(monster.r,monster.c,other.r,other.c))return{valid:false,reason:'monsters adjacent'};
+                }
+            }
+            for(const empty of elements.empty){
+                let hasChest=false,hasMonster=false;
+                for(let dr=-1;dr<=1;dr++){
+                    for(let dc=-1;dc<=1;dc++){
+                        if(dr===0&&dc===0)continue;
+                        const nr=empty.r+dr,nc=empty.c+dc;
+                        if(nr>=0&&nr<size&&nc>=0&&nc<size){
+                            if(grid[nr][nc]==='chest')hasChest=true;
+                            if(grid[nr][nc]==='monster')hasMonster=true;
+                        }
+                    }
+                }
+                if(!hasChest||!hasMonster)return{valid:false,reason:'empty not adjacent to chest and monster'};
+            }
+            return{valid:true};
+        }
+
+        function generateDungeon(seed,playerCount){
+            let mainAttempts=0;
+            const maxMainAttempts=1000;
+            while(mainAttempts<maxMainAttempts){
+                const random=mulberry32(seed+mainAttempts*1000000);
+                const size=GRID_SIZES[playerCount];
+                const grid=Array(size).fill(0).map(()=>Array(size).fill('empty'));
+                const counts=ELEMENT_COUNTS[playerCount];
+                function getEmptyCells(){const cells=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='empty')cells.push({r,c});return cells}
+                function isAdjacent(r1,c1,r2,c2){return Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1&&!(r1===r2&&c1===c2)}
+                let spherePlaced=0,attempts=0;
+                while(spherePlaced<2&&attempts<1000){attempts++;const diagonal=Math.floor(random()*(2*size-1))-(size-1);const diagonalCells=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(c-r===diagonal&&grid[r][c]==='empty')diagonalCells.push({r,c});if(diagonalCells.length>=2){const idx1=Math.floor(random()*diagonalCells.length);let idx2;do{idx2=Math.floor(random()*diagonalCells.length)}while(idx2===idx1);grid[diagonalCells[idx1].r][diagonalCells[idx1].c]='sphere';grid[diagonalCells[idx2].r][diagonalCells[idx2].c]='sphere';spherePlaced=2}}
+                if(spherePlaced<2){mainAttempts++;continue}
+                let passagePlaced=0;attempts=0;const passages=[];
+                while(passagePlaced<2&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(passagePlaced===0){grid[cell.r][cell.c]='passage';passages.push(cell);passagePlaced++}else{const dist=Math.abs(cell.r-passages[0].r)+Math.abs(cell.c-passages[0].c);if(dist>=4){grid[cell.r][cell.c]='passage';passagePlaced++}}}
+                if(passagePlaced<2){mainAttempts++;continue}
+                const potionRows=new Set(),potionCols=new Set();let potionPlaced=0;attempts=0;
+                while(potionPlaced<counts.potion&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(!potionRows.has(cell.r)&&!potionCols.has(cell.c)){grid[cell.r][cell.c]='potion';potionRows.add(cell.r);potionCols.add(cell.c);potionPlaced++}}
+                if(potionPlaced<counts.potion){mainAttempts++;continue}
+                const traps=[];let trapPlaced=0;attempts=0;
+                while(trapPlaced<counts.trap&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(cell.r>0&&cell.r<size-1&&cell.c>0&&cell.c<size-1){let adjacent=false;for(const trap of traps)if(isAdjacent(cell.r,cell.c,trap.r,trap.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='trap';traps.push(cell);trapPlaced++}}}
+                if(trapPlaced<counts.trap){mainAttempts++;continue}
+                const chests=[];let chestPlaced=0;attempts=0;
+                while(chestPlaced<counts.chest&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacent=false;for(const chest of chests)if(isAdjacent(cell.r,cell.c,chest.r,chest.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='chest';chests.push(cell);chestPlaced++}}
+                if(chestPlaced<counts.chest){mainAttempts++;continue}
+                let keyPlaced=0;attempts=0;
+                while(keyPlaced<counts.key&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];for(const chest of chests){const dist=Math.max(Math.abs(cell.r-chest.r),Math.abs(cell.c-chest.c));if(dist<=2){grid[cell.r][cell.c]='key';keyPlaced++;break}}}
+                if(keyPlaced<counts.key){mainAttempts++;continue}
+                const keys=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='key')keys.push({r,c});
+                let swordPlaced=0;attempts=0;
+                while(swordPlaced<counts.sword&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacentToKey=false;for(const key of keys)if(isAdjacent(cell.r,cell.c,key.r,key.c)){adjacentToKey=true;break}if(!adjacentToKey){grid[cell.r][cell.c]='sword';swordPlaced++}}
+                if(swordPlaced<counts.sword){mainAttempts++;continue}
+                const monsters=[];let monsterPlaced=0;attempts=0;
+                while(monsterPlaced<counts.monster&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacent=false;for(const monster of monsters)if(isAdjacent(cell.r,cell.c,monster.r,monster.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='monster';monsters.push(cell);monsterPlaced++}}
+                if(monsterPlaced<counts.monster){mainAttempts++;continue}
+                const validation=validateAllConstraints(grid,size,counts);
+                if(validation.valid){return {grid,size,valid:true}}
+                mainAttempts++;
+            }
+            return {grid:null,size:0,valid:false};
+        }
 
         function testDungeon(grid, size, playerCount) {
             const results = [];
@@ -267,56 +374,81 @@
         function runTests() {
             const seed = Math.floor(Math.random() * 1000000);
             const playerCount = 4; // Test con 4 giocatori
-            
-            const {grid, size} = generateDungeon(seed, playerCount);
-            const results = testDungeon(grid, size, playerCount);
-            
+
+            const result = generateDungeon(seed, playerCount);
+
             let html = `<div class="test">`;
             html += `<h2>Test Seed: ${seed} (${playerCount} giocatori)</h2>`;
+
+            if (!result.valid || !result.grid) {
+                html += `<div class="fail">❌ Generazione fallita! Impossibile creare dungeon valido.</div>`;
+                html += `</div>`;
+                document.getElementById('results').innerHTML = html;
+                return;
+            }
+
+            const {grid, size} = result;
+            html += `<div class="pass">✅ Generazione riuscita con validazione completa</div>`;
             html += displayGrid(grid, size);
+
+            const testResults = testDungeon(grid, size, playerCount);
             html += `<div style="margin-top: 20px;">`;
-            
+
             let passed = 0;
             let failed = 0;
-            for (const result of results) {
-                const className = result.pass ? 'pass' : 'fail';
-                html += `<div class="${className}">• ${result.msg}</div>`;
-                if (result.pass) passed++;
+            for (const r of testResults) {
+                const className = r.pass ? 'pass' : 'fail';
+                html += `<div class="${className}">• ${r.msg}</div>`;
+                if (r.pass) passed++;
                 else failed++;
             }
-            
+
             html += `</div>`;
             html += `<div style="margin-top: 20px; font-weight: bold;">Totale: ${passed} passati, ${failed} falliti</div>`;
             html += `</div>`;
-            
+
             document.getElementById('results').innerHTML = html;
         }
 
         function runMultipleTests() {
             let html = '<div class="test"><h2>Test Multipli (10 generazioni casuali)</h2>';
-            
+            let totalSuccess = 0;
+            let totalFail = 0;
+
             for (let i = 0; i < 10; i++) {
                 const seed = Math.floor(Math.random() * 1000000);
                 const playerCount = [2, 3, 4][Math.floor(Math.random() * 3)];
-                
-                const {grid, size} = generateDungeon(seed, playerCount);
-                const results = testDungeon(grid, size, playerCount);
-                
-                const failed = results.filter(r => !r.pass).length;
+
+                const result = generateDungeon(seed, playerCount);
+
+                if (!result.valid || !result.grid) {
+                    html += `<div class="fail">Test ${i+1} - Seed: ${seed} (${playerCount} giocatori) - ❌ Generazione fallita!</div>`;
+                    totalFail++;
+                    continue;
+                }
+
+                const {grid, size} = result;
+                const testResults = testDungeon(grid, size, playerCount);
+
+                const failed = testResults.filter(r => !r.pass).length;
                 const status = failed === 0 ? 'pass' : 'fail';
-                
-                html += `<div class="${status}">Test ${i+1} - Seed: ${seed} (${playerCount} giocatori) - ${failed > 0 ? `❌ ${failed} errori` : '✅ OK'}</div>`;
-                
-                if (failed > 0) {
+
+                if (failed === 0) {
+                    totalSuccess++;
+                    html += `<div class="${status}">Test ${i+1} - Seed: ${seed} (${playerCount} giocatori) - ✅ OK (tutti i vincoli rispettati)</div>`;
+                } else {
+                    totalFail++;
+                    html += `<div class="${status}">Test ${i+1} - Seed: ${seed} (${playerCount} giocatori) - ❌ ${failed} errori</div>`;
                     html += displayGrid(grid, size);
-                    for (const result of results) {
-                        if (!result.pass) {
-                            html += `<div class="fail" style="margin-left: 20px;">  • ${result.msg}</div>`;
+                    for (const r of testResults) {
+                        if (!r.pass) {
+                            html += `<div class="fail" style="margin-left: 20px;">  • ${r.msg}</div>`;
                         }
                     }
                 }
             }
-            
+
+            html += `<div style="margin-top: 20px; font-weight: bold; font-size: 1.2em;">Riepilogo: ${totalSuccess}/10 generazioni valide</div>`;
             html += '</div>';
             document.getElementById('results').innerHTML = html;
         }
