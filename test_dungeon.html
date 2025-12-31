@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Generazione Dungeon - Crypta</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #f0e6d3; }
+        .test { margin: 20px 0; padding: 10px; background: #2d2d44; border-radius: 5px; }
+        .pass { color: #4caf50; }
+        .fail { color: #f44336; font-weight: bold; }
+        .warning { color: #ff9800; }
+        .grid { display: inline-grid; gap: 2px; margin: 10px; }
+        .cell { width: 30px; height: 30px; border: 1px solid #555; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        button { padding: 10px 20px; margin: 10px; background: #5c4033; color: #f0e6d3; border: 2px solid #8b7355; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #8b6914; }
+    </style>
+</head>
+<body>
+    <h1>Test Generazione Dungeon - Crypta</h1>
+    <button onclick="runTests()">Esegui Test</button>
+    <button onclick="runMultipleTests()">Test Multiple (10 generazioni)</button>
+    <div id="results"></div>
+
+    <script>
+        // Copia delle funzioni dal gioco
+        function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+        
+        const ELEMENT_COUNTS={2:{monster:4,chest:5,key:5,sword:4,potion:5,trap:3,passage:2,sphere:2,empty:6},3:{monster:6,chest:7,key:7,sword:6,potion:6,trap:4,passage:2,sphere:2,empty:9},4:{monster:8,chest:9,key:9,sword:8,potion:7,trap:5,passage:2,sphere:2,empty:14}};
+        const GRID_SIZES={2:6,3:7,4:8};
+
+        function generateDungeon(seed,playerCount){const random=mulberry32(seed);const size=GRID_SIZES[playerCount];let grid=Array(size).fill(0).map(()=>Array(size).fill('empty'));const counts=ELEMENT_COUNTS[playerCount];function getEmptyCells(){const cells=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='empty')cells.push({r,c});return cells}function isAdjacent(r1,c1,r2,c2){return Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1&&!(r1===r2&&c1===c2)}let spherePlaced=0,attempts=0;while(spherePlaced<2&&attempts<1000){attempts++;const diagonal=Math.floor(random()*(2*size-1))-(size-1);const diagonalCells=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(c-r===diagonal&&grid[r][c]==='empty')diagonalCells.push({r,c});if(diagonalCells.length>=2){const idx1=Math.floor(random()*diagonalCells.length);let idx2;do{idx2=Math.floor(random()*diagonalCells.length)}while(idx2===idx1);grid[diagonalCells[idx1].r][diagonalCells[idx1].c]='sphere';grid[diagonalCells[idx2].r][diagonalCells[idx2].c]='sphere';spherePlaced=2}}let passagePlaced=0;attempts=0;const passages=[];while(passagePlaced<2&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(passagePlaced===0){grid[cell.r][cell.c]='passage';passages.push(cell);passagePlaced++}else{const dist=Math.abs(cell.r-passages[0].r)+Math.abs(cell.c-passages[0].c);if(dist>=4){grid[cell.r][cell.c]='passage';passagePlaced++}}}const potionRows=new Set(),potionCols=new Set();let potionPlaced=0;attempts=0;while(potionPlaced<counts.potion&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(!potionRows.has(cell.r)&&!potionCols.has(cell.c)){grid[cell.r][cell.c]='potion';potionRows.add(cell.r);potionCols.add(cell.c);potionPlaced++}}const traps=[];let trapPlaced=0;attempts=0;while(trapPlaced<counts.trap&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];if(cell.r>0&&cell.r<size-1&&cell.c>0&&cell.c<size-1){let adjacent=false;for(const trap of traps)if(isAdjacent(cell.r,cell.c,trap.r,trap.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='trap';traps.push(cell);trapPlaced++}}}const chests=[];let chestPlaced=0;attempts=0;while(chestPlaced<counts.chest&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacent=false;for(const chest of chests)if(isAdjacent(cell.r,cell.c,chest.r,chest.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='chest';chests.push(cell);chestPlaced++}}let keyPlaced=0;attempts=0;while(keyPlaced<counts.key&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];for(const chest of chests){const dist=Math.max(Math.abs(cell.r-chest.r),Math.abs(cell.c-chest.c));if(dist<=3){grid[cell.r][cell.c]='key';keyPlaced++;break}}}const keys=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='key')keys.push({r,c});let swordPlaced=0;attempts=0;while(swordPlaced<counts.sword&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacentToKey=false;for(const key of keys)if(isAdjacent(cell.r,cell.c,key.r,key.c)){adjacentToKey=true;break}if(!adjacentToKey){grid[cell.r][cell.c]='sword';swordPlaced++}}const monsters=[];let monsterPlaced=0;attempts=0;while(monsterPlaced<counts.monster&&attempts<1000){attempts++;const empty=getEmptyCells();if(!empty.length)break;const cell=empty[Math.floor(random()*empty.length)];let adjacent=false;for(const monster of monsters)if(isAdjacent(cell.r,cell.c,monster.r,monster.c)){adjacent=true;break}if(!adjacent){grid[cell.r][cell.c]='monster';monsters.push(cell);monsterPlaced++}}return {grid,size}}
+
+        function testDungeon(grid, size, playerCount) {
+            const results = [];
+            const counts = ELEMENT_COUNTS[playerCount];
+            
+            // Conta elementi
+            const elementCounts = {};
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const elem = grid[r][c];
+                    elementCounts[elem] = (elementCounts[elem] || 0) + 1;
+                }
+            }
+
+            // Test 1: Conteggio elementi
+            for (const [elem, expectedCount] of Object.entries(counts)) {
+                const actualCount = elementCounts[elem] || 0;
+                if (actualCount !== expectedCount) {
+                    results.push({pass: false, msg: `${elem}: attesi ${expectedCount}, trovati ${actualCount}`});
+                } else {
+                    results.push({pass: true, msg: `${elem}: ${actualCount} ✓`});
+                }
+            }
+
+            // Test 2: Sfere sulla stessa diagonale
+            const spheres = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'sphere') spheres.push({r, c});
+                }
+            }
+            if (spheres.length === 2) {
+                const diag1 = spheres[0].c - spheres[0].r;
+                const diag2 = spheres[1].c - spheres[1].r;
+                if (diag1 === diag2) {
+                    results.push({pass: true, msg: `Sfere sulla stessa diagonale ✓`});
+                } else {
+                    results.push({pass: false, msg: `Sfere NON sulla stessa diagonale! (${spheres[0].c}-${spheres[0].r}=${diag1}, ${spheres[1].c}-${spheres[1].r}=${diag2})`});
+                }
+            }
+
+            // Test 3: Passaggi distanza >= 4
+            const passages = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'passage') passages.push({r, c});
+                }
+            }
+            if (passages.length === 2) {
+                const dist = Math.abs(passages[0].r - passages[1].r) + Math.abs(passages[0].c - passages[1].c);
+                if (dist >= 4) {
+                    results.push({pass: true, msg: `Passaggi a distanza ${dist} ✓`});
+                } else {
+                    results.push({pass: false, msg: `Passaggi troppo vicini! Distanza: ${dist} (min 4)`});
+                }
+            }
+
+            // Test 4: Pozioni non su stessa riga/colonna
+            const potions = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'potion') potions.push({r, c});
+                }
+            }
+            let potionsFail = false;
+            for (let i = 0; i < potions.length; i++) {
+                for (let j = i + 1; j < potions.length; j++) {
+                    if (potions[i].r === potions[j].r) {
+                        results.push({pass: false, msg: `Pozioni sulla stessa riga ${potions[i].r}!`});
+                        potionsFail = true;
+                    }
+                    if (potions[i].c === potions[j].c) {
+                        results.push({pass: false, msg: `Pozioni sulla stessa colonna ${potions[i].c}!`});
+                        potionsFail = true;
+                    }
+                }
+            }
+            if (!potionsFail) results.push({pass: true, msg: `Pozioni non su stessa riga/colonna ✓`});
+
+            // Test 5: Trappole non sui bordi
+            const traps = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'trap') {
+                        traps.push({r, c});
+                        if (r === 0 || r === size - 1 || c === 0 || c === size - 1) {
+                            results.push({pass: false, msg: `Trappola sul bordo in (${r},${c})!`});
+                        }
+                    }
+                }
+            }
+
+            // Test 6: Trappole non adiacenti
+            function isAdjacent(r1, c1, r2, c2) {
+                return Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1 && !(r1 === r2 && c1 === c2);
+            }
+            let trapsAdjacent = false;
+            for (let i = 0; i < traps.length; i++) {
+                for (let j = i + 1; j < traps.length; j++) {
+                    if (isAdjacent(traps[i].r, traps[i].c, traps[j].r, traps[j].c)) {
+                        results.push({pass: false, msg: `Trappole adiacenti in (${traps[i].r},${traps[i].c}) e (${traps[j].r},${traps[j].c})!`});
+                        trapsAdjacent = true;
+                    }
+                }
+            }
+            if (!trapsAdjacent && traps.length > 0) results.push({pass: true, msg: `Trappole non adiacenti ✓`});
+
+            // Test 7: Scrigni non adiacenti
+            const chests = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'chest') chests.push({r, c});
+                }
+            }
+            let chestsAdjacent = false;
+            for (let i = 0; i < chests.length; i++) {
+                for (let j = i + 1; j < chests.length; j++) {
+                    if (isAdjacent(chests[i].r, chests[i].c, chests[j].r, chests[j].c)) {
+                        results.push({pass: false, msg: `Scrigni adiacenti in (${chests[i].r},${chests[i].c}) e (${chests[j].r},${chests[j].c})!`});
+                        chestsAdjacent = true;
+                    }
+                }
+            }
+            if (!chestsAdjacent && chests.length > 0) results.push({pass: true, msg: `Scrigni non adiacenti ✓`});
+
+            // Test 8: Mostri non adiacenti
+            const monsters = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'monster') monsters.push({r, c});
+                }
+            }
+            let monstersAdjacent = false;
+            for (let i = 0; i < monsters.length; i++) {
+                for (let j = i + 1; j < monsters.length; j++) {
+                    if (isAdjacent(monsters[i].r, monsters[i].c, monsters[j].r, monsters[j].c)) {
+                        results.push({pass: false, msg: `Mostri adiacenti in (${monsters[i].r},${monsters[i].c}) e (${monsters[j].r},${monsters[j].c})!`});
+                        monstersAdjacent = true;
+                    }
+                }
+            }
+            if (!monstersAdjacent && monsters.length > 0) results.push({pass: true, msg: `Mostri non adiacenti ✓`});
+
+            // Test 9: Chiavi entro distanza 3 da almeno uno scrigno
+            const keys = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'key') keys.push({r, c});
+                }
+            }
+            for (const key of keys) {
+                let nearChest = false;
+                for (const chest of chests) {
+                    const dist = Math.max(Math.abs(key.r - chest.r), Math.abs(key.c - chest.c));
+                    if (dist <= 3) {
+                        nearChest = true;
+                        break;
+                    }
+                }
+                if (!nearChest) {
+                    results.push({pass: false, msg: `Chiave in (${key.r},${key.c}) troppo lontana da tutti gli scrigni!`});
+                }
+            }
+
+            // Test 10: Spade non adiacenti a chiavi
+            const swords = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'sword') swords.push({r, c});
+                }
+            }
+            let swordKeyAdjacent = false;
+            for (const sword of swords) {
+                for (const key of keys) {
+                    if (isAdjacent(sword.r, sword.c, key.r, key.c)) {
+                        results.push({pass: false, msg: `Spada in (${sword.r},${sword.c}) adiacente a chiave in (${key.r},${key.c})!`});
+                        swordKeyAdjacent = true;
+                    }
+                }
+            }
+            if (!swordKeyAdjacent && swords.length > 0 && keys.length > 0) results.push({pass: true, msg: `Spade non adiacenti a chiavi ✓`});
+
+            // Test 11: Vuoti formano blocchi di almeno 4 celle connesse
+            const empties = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === 'empty') empties.push({r, c});
+                }
+            }
+            
+            if (empties.length > 0) {
+                const visited = new Set();
+                const blocks = [];
+                
+                function floodFill(r, c) {
+                    const key = `${r},${c}`;
+                    if (visited.has(key)) return [];
+                    if (r < 0 || r >= size || c < 0 || c >= size) return [];
+                    if (grid[r][c] !== 'empty') return [];
+                    
+                    visited.add(key);
+                    const block = [{r, c}];
+                    
+                    block.push(...floodFill(r-1, c));
+                    block.push(...floodFill(r+1, c));
+                    block.push(...floodFill(r, c-1));
+                    block.push(...floodFill(r, c+1));
+                    
+                    return block;
+                }
+                
+                for (const empty of empties) {
+                    const key = `${empty.r},${empty.c}`;
+                    if (!visited.has(key)) {
+                        const block = floodFill(empty.r, empty.c);
+                        if (block.length > 0) blocks.push(block);
+                    }
+                }
+                
+                let smallBlocks = blocks.filter(b => b.length < 4);
+                if (smallBlocks.length > 0) {
+                    results.push({pass: false, msg: `Trovati ${smallBlocks.length} blocchi di vuoti con meno di 4 celle! (dimensioni: ${smallBlocks.map(b => b.length).join(', ')})`});
+                } else {
+                    results.push({pass: true, msg: `Tutti i blocchi di vuoti hanno almeno 4 celle ✓ (${blocks.length} blocchi)`});
+                }
+            }
+
+            return results;
+        }
+
+        function displayGrid(grid, size) {
+            const symbols = {
+                monster: '👹',
+                chest: '📦',
+                key: '🔑',
+                sword: '⚔️',
+                potion: '🧪',
+                trap: '⚠️',
+                passage: '🚪',
+                sphere: '🔮',
+                empty: '·'
+            };
+            
+            let html = `<div class="grid" style="grid-template-columns: repeat(${size}, 30px);">`;
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const elem = grid[r][c];
+                    html += `<div class="cell" title="${elem} (${r},${c})">${symbols[elem]}</div>`;
+                }
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function runTests() {
+            const seed = Math.floor(Math.random() * 1000000);
+            const playerCount = 4; // Test con 4 giocatori
+            
+            const {grid, size} = generateDungeon(seed, playerCount);
+            const results = testDungeon(grid, size, playerCount);
+            
+            let html = `<div class="test">`;
+            html += `<h2>Test Seed: ${seed} (${playerCount} giocatori)</h2>`;
+            html += displayGrid(grid, size);
+            html += `<div style="margin-top: 20px;">`;
+            
+            let passed = 0;
+            let failed = 0;
+            for (const result of results) {
+                const className = result.pass ? 'pass' : 'fail';
+                html += `<div class="${className}">• ${result.msg}</div>`;
+                if (result.pass) passed++;
+                else failed++;
+            }
+            
+            html += `</div>`;
+            html += `<div style="margin-top: 20px; font-weight: bold;">Totale: ${passed} passati, ${failed} falliti</div>`;
+            html += `</div>`;
+            
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function runMultipleTests() {
+            let html = '<div class="test"><h2>Test Multipli (10 generazioni casuali)</h2>';
+            
+            for (let i = 0; i < 10; i++) {
+                const seed = Math.floor(Math.random() * 1000000);
+                const playerCount = [2, 3, 4][Math.floor(Math.random() * 3)];
+                
+                const {grid, size} = generateDungeon(seed, playerCount);
+                const results = testDungeon(grid, size, playerCount);
+                
+                const failed = results.filter(r => !r.pass).length;
+                const status = failed === 0 ? 'pass' : 'fail';
+                
+                html += `<div class="${status}">Test ${i+1} - Seed: ${seed} (${playerCount} giocatori) - ${failed > 0 ? `❌ ${failed} errori` : '✅ OK'}</div>`;
+                
+                if (failed > 0) {
+                    html += displayGrid(grid, size);
+                    for (const result of results) {
+                        if (!result.pass) {
+                            html += `<div class="fail" style="margin-left: 20px;">  • ${result.msg}</div>`;
+                        }
+                    }
+                }
+            }
+            
+            html += '</div>';
+            document.getElementById('results').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
