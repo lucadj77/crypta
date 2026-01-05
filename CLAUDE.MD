@@ -28,31 +28,29 @@ The app supports **Italian** (default) and **English**. Language can be selected
 ### Game Flow
 
 1. **Start Screen**: Language selector + "New Game" or "Enter Code" buttons
-2. **New Game**: Select 2, 3, or 4 players → generates layout + 6-digit code
+2. **New Game**: Generates layout + 6-digit code (grid is always 7×7)
 3. **Enter Code**: Input existing 6-digit code → regenerates identical layout
-4. **Game Screen**: Coordinate selection (A-H, 1-8) → reveal cell contents → track history
+4. **Game Screen**: Coordinate selection (A-G, 1-7) → reveal cell contents → track on visual grid
 
-### Grid Sizes
+### Grid Size
 
-- 2 players: 6×6 (A-F, 1-6)
-- 3 players: 7×7 (A-G, 1-7)
-- 4 players: 8×8 (A-H, 1-8)
+The grid is always **7×7** (columns A-G, rows 1-7) regardless of the number of players. The number of players does not affect the app.
 
-### Element Counts by Player Count
+### Element Counts
 
-| Element | 2 Players | 3 Players | 4 Players |
-|---------|-----------|-----------|-----------|
-| Monsters | 4 | 6 | 8 |
-| Chests | 5 | 7 | 9 |
-| Keys | 5 | 7 | 9 |
-| Swords | 4 | 6 | 8 |
-| Potions | 5 | 6 | 7 |
-| Traps | 3 | 4 | 5 |
-| Secret Passages | 2 | 2 | 2 |
-| Spheres | 2 | 2 | 2 |
-| Empty Cells | 6 | 9 | 14 |
+The dungeon follows a **sudoku-like structure**: each element type appears exactly **once per row** and **once per column**.
 
-**Total cells must match grid size**: 36, 49, or 64 respectively.
+| Element | Count | Notes |
+|---------|-------|-------|
+| Monsters | 7 | One per row, one per column |
+| Chests | 7 | One per row, one per column |
+| Keys | 7 | One per row, one per column |
+| Swords | 7 | One per row, one per column |
+| Potions | 7 | One per row, one per column |
+| Empty | 7 | One per row, one per column |
+| Other | 7 | One per row, one per column (contains: 3 traps, 2 spheres, 2 passages) |
+
+**Total: 49 cells** (7×7 grid)
 
 ## Generation Algorithm
 
@@ -60,60 +58,85 @@ The app supports **Italian** (default) and **English**. Language can be selected
 
 The 6-digit game code (000000-999999) serves as the seed for a pseudo-random number generator (mulberry32). **The same code must always generate the identical layout on any device**.
 
+### Sudoku Constraint
+
+Every element type (Monster, Chest, Key, Sword, Potion, Empty, Other) must appear **exactly once in each row** and **exactly once in each column**. This is the primary constraint that governs placement.
+
 ### Placement Order (by constraint complexity)
 
-1. **Spheres** (2) - must be on same diagonal
-2. **Secret Passages** (2) - minimum Manhattan distance of 4
-3. **Potions** (5-7) - max one per row and column (like chess queens)
-4. **Traps** (3-5) - never on edges, never adjacent to each other
-5. **Chests** (5-9) - never adjacent to each other
-6. **Keys** (5-9) - must be within 2 cells (Chebyshev distance) of at least one chest
-7. **Swords** (4-8) - never adjacent to keys
-8. **Monsters** (4-8) - never adjacent to each other
-9. **Empty cells** (remaining) - each must be adjacent to both a chest and a monster
+Place elements in this order, respecting sudoku constraints throughout:
 
-### Placement Constraints Details
+1. **Monsters** (7) - no two monsters adjacent to each other (8 directions)
+2. **Chests** (7) - each chest must have at least one monster in adjacent cells (8 directions)
+3. **Swords** (7) - sudoku only, no additional adjacency constraints
+4. **Keys** (7) - sudoku only, no additional adjacency constraints
+5. **Potions** (7) - sudoku only, no additional adjacency constraints
+6. **Empty** (7) - sudoku only, no additional adjacency constraints
+7. **Other** (7) - remaining cells, then assign subtypes
 
-#### Spheres
-- Exactly 2 spheres
-- Must be on the same diagonal (same col-row value)
-- Algorithm: Pick random diagonal, select 2 random positions on it
+### "Other" Category Subtype Assignment
 
-#### Secret Passages
-- Exactly 2 passages
-- Manhattan distance ≥ 4: `|col1-col2| + |row1-row2| ≥ 4`
+After placing all 7 "Other" cells, assign subtypes (3 traps, 2 spheres, 2 passages) with these constraints:
 
-#### Potions
-- No two potions on same row
-- No two potions on same column
-- (Like chess queens without diagonal constraint)
+- **Spheres** (2): must be on the same diagonal (same `col - row` value OR same `col + row` value)
+- **Passages** (2): Manhattan distance ≥ 4 between them (`|col1-col2| + |row1-row2| ≥ 4`)
+- **Traps** (3): must be on internal cells only (rows 2-6, columns B-F; never on edges)
 
-#### Traps
-- Never on grid edges (first/last row or column)
-- Never adjacent to each other (8 directions)
+Algorithm for subtype assignment:
+1. Find all pairs of "Other" positions that share a diagonal → candidate sphere pairs
+2. Find all pairs with Manhattan distance ≥ 4 → candidate passage pairs
+3. Find all "Other" positions not on edges → candidate trap positions
+4. Find a valid assignment where: 2 spheres + 2 passages + 3 traps = 7, all positions distinct, all constraints met
 
-#### Chests
-- Never adjacent to each other (8 directions)
+### Placement Constraints Summary
 
-#### Keys
-- Each key must be within Chebyshev distance ≤ 2 from at least one chest
-- Chebyshev distance = `max(|Δcol|, |Δrow|)`
+| Element | Sudoku | Additional Constraint |
+|---------|--------|----------------------|
+| Monsters | ✓ | Not adjacent to other monsters |
+| Chests | ✓ | Must have ≥1 monster adjacent |
+| Swords | ✓ | None |
+| Keys | ✓ | None |
+| Potions | ✓ | None |
+| Empty | ✓ | None |
+| Other | ✓ | See subtype constraints below |
 
-#### Swords
-- Never adjacent to keys (8 directions)
+| Subtype | Constraint |
+|---------|-----------|
+| Spheres | Same diagonal |
+| Passages | Manhattan distance ≥ 4 |
+| Traps | Not on grid edges |
 
-#### Monsters
-- Never adjacent to each other (8 directions)
+### Post-Generation Validation
 
-#### Empty Cells
-- Every empty cell must be adjacent (including diagonals) to both at least one chest AND at least one monster
-- Adjacency includes all 8 directions (orthogonal + diagonal)
-- Verified after all other elements are placed
-- If validation fails, regenerate with modified seed
+**Critical**: After generating a layout, the app MUST validate ALL constraints:
+
+1. Sudoku check: each element type appears exactly once per row and column
+2. Monsters: no two monsters are adjacent
+3. Chests: every chest has at least one adjacent monster
+4. Spheres: both spheres are on the same diagonal
+5. Passages: Manhattan distance between passages ≥ 4
+6. Traps: no trap is on an edge cell
+
+**If ANY constraint fails**: discard the layout and regenerate with the same seed but using an internal retry counter as offset.
 
 ### Failure Handling
 
-If placement fails after 1000 attempts, throw error. Consider implementing backtracking or seed offset retry logic.
+```javascript
+function generateWithRetry(baseSeed) {
+    for (let attempt = 0; attempt < 1000; attempt++) {
+        const seed = baseSeed + attempt * 1000000; // Offset seed
+        const layout = tryGenerate(seed);
+        if (layout && validateAllConstraints(layout)) {
+            return layout;
+        }
+    }
+    // After 1000 failed attempts, change base seed
+    const newSeed = (baseSeed + 1) % 1000000;
+    return generateWithRetry(newSeed);
+}
+```
+
+The displayed 6-digit code is always the original `baseSeed`, not the internal offset seed.
 
 ## Visual Design
 
@@ -135,6 +158,7 @@ Dark dungeon fantasy atmosphere with colors suggesting underground exploration.
 | Borders | Dark gold | `#8b7355` |
 | Success | Emerald green | `#2e7d32` |
 | Error | Blood red | `#c62828` |
+| Secret cell | Purple | `#6a0dad` |
 
 ### Typography
 
@@ -153,7 +177,7 @@ Dark dungeon fantasy atmosphere with colors suggesting underground exploration.
 
 ## Game Assets
 
-### Required Images
+### Required Images (Base64 embedded)
 
 - `chiave.png` (Key)
 - `mostro.png` (Monster)
@@ -163,56 +187,184 @@ Dark dungeon fantasy atmosphere with colors suggesting underground exploration.
 - `sfera.png` (Sphere)
 - `spada.png` (Sword)
 - `trappola.png` (Trap)
-- `ferita.png` (Wound - optional, not used in app)
-
-Empty cells use a CSS/SVG icon (e.g., gray empty circle).
+- `segreto.png` (Secret - eye icon for cells seen only by one player)
+- `vuoto.png` or CSS icon (Empty - gray circle or similar)
 
 ## Game Features
 
 ### Main Screen Components
 
 1. **Game Code Display**: 6-digit code with copy button
-2. **Coordinate Selection**: Letter buttons (A-H) + Number buttons (1-8)
-3. **Selected Cell Display**: Shows current selection (e.g., "A3")
-4. **Confirm Button**: Reveals selected cell
-5. **Sphere Mode Toggle**: Marks discoveries as "(sphere)" in history
-6. **History List**: Shows all discovered cells (e.g., "A3: Monster" or "C2: Key (sphere)")
-7. **Remaining Counter**: Shows undiscovered elements with icons
+2. **Discovery Grid**: 7×7 visual grid showing coordinates and discovered elements
+3. **Coordinate Selection**: Letter buttons (A-G) + Number buttons (1-7)
+4. **Selected Cell Display**: Shows current selection (e.g., "D3")
+5. **Confirm Button**: Reveals selected cell
+6. **Secret Mode Toggle**: For sphere/vision discoveries (private to one player)
+7. **Remaining Counter**: Shows undiscovered elements with icons and counts
 8. **Show Map Button**: Reveals entire grid (with confirmation, irreversible)
 9. **New Game Button**: Returns to start screen (with confirmation)
 
-### Sphere Mode
+### Discovery Grid (replaces text history)
 
-- Toggle/checkbox control
-- When active, discoveries are marked "(sphere)" in history
-- Used to distinguish sphere discoveries (not marked on shared board)
+Instead of a text list, the app displays a **visual 7×7 grid** that shows:
 
-### History
+- **Undiscovered cells**: Empty/dark appearance
+- **Publicly discovered cells**: Show the element icon (monster, chest, key, etc.)
+- **Secretly discovered cells**: Show a special "secret" icon (eye symbol) in a purple tint
+- **Grid headers**: Column letters (A-G) on top, row numbers (1-7) on the side
 
-- Lists all queried cells in this session
-- Format: "A3: Monster" or "C2: Key (sphere)"
-- Clear button to reset history
+When a cell is discovered:
+- If **Secret Mode is OFF**: The cell shows the actual element icon (public discovery)
+- If **Secret Mode is ON**: The cell shows the "secret" icon (private discovery via sphere or vision)
+
+If a secretly-discovered cell is later discovered publicly, the icon updates to show the actual element.
+
+### Secret Mode
+
+Replaces the old "Sphere Mode". Used for:
+- **Sphere discoveries**: When a player uses a sphere to look at any cell
+- **Vision discoveries**: When a player uses the vision modifier to look ahead
+
+When Secret Mode is active:
+- The discovery is marked as private (shows eye icon on grid)
+- The actual element is revealed to the querying player but not shown on the shared grid
+- A visual indicator shows Secret Mode is active (purple border or glow)
+
+Toggle behavior:
+- Player activates Secret Mode before querying
+- After the query, Secret Mode can stay on (for multiple secret queries) or be turned off
+- Recommend: auto-toggle OFF after each query, with option to keep ON
+
+### Already Discovered Cell Alert
+
+When a player queries a cell that was **already publicly discovered**:
+
+- Show a prominent message: "Questa casella è già stata esplorata" / "This cell was already explored"
+- Still show what's in the cell (as a reminder)
+- This alerts players that the cell may have been emptied (items taken, monster defeated)
+
+When a player queries a cell that was **secretly discovered** (by themselves or others):
+- If Secret Mode is OFF: Convert to public discovery, show actual icon
+- If Secret Mode is ON: Show the actual content to the player privately (may already know it)
+
+### Remaining Elements Counter
+
+Shows icons with counts for undiscovered elements:
+- Monsters: 7 → decreases as discovered
+- Chests: 7 → decreases as discovered
+- Keys: 7 → decreases as discovered
+- etc.
+
+**Important**: Only publicly discovered cells decrease the counter. Secret discoveries do NOT affect the counter (since other players don't know about them).
 
 ### Show Full Map
 
-- Requires confirmation before proceeding
-- Displays entire grid with all elements
-- Cannot be undone (game is compromised)
+- Requires confirmation: "Sei sicuro? Questa azione non può essere annullata" / "Are you sure? This action cannot be undone"
+- Displays entire grid with all elements revealed
+- Disables further queries (game is compromised)
+- Useful for end-game verification or debugging
+
+## Screen Layouts
+
+### Start Screen
+
+```
+┌─────────────────────────────┐
+│         🏰 CRYPTA 🏰         │
+│                             │
+│    [IT 🇮🇹] [EN 🇬🇧]         │
+│                             │
+│    ┌─────────────────┐      │
+│    │   Nuova partita │      │
+│    └─────────────────┘      │
+│                             │
+│    ┌─────────────────┐      │
+│    │  Inserisci code │      │
+│    └─────────────────┘      │
+│                             │
+└─────────────────────────────┘
+```
+
+### Game Screen
+
+```
+┌─────────────────────────────┐
+│  Codice: 123456  [📋]       │
+│                             │
+│    A B C D E F G            │
+│  1 ░ ░ 🗝 ░ ░ ░ ░           │
+│  2 ░ 👁 ░ 🗡 ░ ░ ░           │
+│  3 ░ ░ ░ ░ 👹 ░ ░           │
+│  4 ░ ░ 📦 ░ ░ ░ ░           │
+│  5 ░ ░ ░ ░ ░ ░ ░           │
+│  6 ░ ░ ░ ░ ░ ░ ░           │
+│  7 ░ ░ ░ ░ ░ ░ ░           │
+│                             │
+│  [A][B][C][D][E][F][G]      │
+│  [1][2][3][4][5][6][7]      │
+│                             │
+│  Selezionato: D3            │
+│  [    Conferma    ]         │
+│                             │
+│  [ ] Modalità segreta 👁    │
+│                             │
+│  Rimanenti:                 │
+│  👹7 📦7 🗝7 🗡7 🧪7 ...     │
+│                             │
+│ [Mostra mappa] [Nuova]      │
+└─────────────────────────────┘
+```
+
+Legend:
+- ░ = undiscovered cell
+- 👁 = secretly discovered (eye icon)
+- 🗝🗡👹📦🧪 = publicly discovered elements
 
 ## Development Guidelines
 
 ### Testing Checklist
 
-1. **Generation Testing**: Verify algorithm generates valid layouts in < 1 second
-2. **Seed Validation**: Same code must produce identical layout on any device
-3. **Accessibility**: Sufficient contrast, large buttons, readable text
+1. **Generation Testing**: 
+   - Verify algorithm generates valid layouts
+   - All sudoku constraints satisfied
+   - All adjacency constraints satisfied
+   - Generation completes in < 2 seconds (including retries)
+
+2. **Seed Validation**: 
+   - Same code must produce identical layout on any device
+   - Test on different browsers and devices
+   - Test codes with leading zeros (e.g., "007234")
+
+3. **Constraint Validation**:
+   - Monsters never adjacent
+   - Every chest has adjacent monster
+   - Spheres on same diagonal
+   - Passages at distance ≥ 4
+   - Traps not on edges
+   - Sudoku structure intact
+
+4. **UI Testing**:
+   - Discovery grid updates correctly
+   - Secret mode shows eye icon
+   - Already-explored alert appears
+   - Remaining counter accurate (public only)
+   - Responsive on mobile
+
+5. **Accessibility**: 
+   - Sufficient contrast
+   - Large touch targets
+   - Readable text
+   - Screen reader support (ARIA labels)
 
 ### Edge Cases to Handle
 
 - Codes with leading zeros (e.g., "007234")
-- Re-querying already discovered cells (show again, add to history)
-- Empty grid after discovering all elements
+- Re-querying already discovered cells (show alert + content)
+- Re-querying secretly discovered cells (convert to public or keep secret)
+- Secret mode left ON accidentally
+- All elements discovered (show completion message?)
 - Invalid code input (show error, allow retry)
+- Generation failure after 1000 attempts (change seed, notify user?)
 
 ### Validation Requirements
 
@@ -221,36 +373,72 @@ Before considering the app complete, verify:
 - [ ] Single HTML file with no external dependencies
 - [ ] Works offline
 - [ ] Same seed = same layout (cross-device tested)
+- [ ] Sudoku constraint enforced (1 per row/column for each type)
 - [ ] All placement constraints properly enforced
+- [ ] Post-generation validation catches all invalid layouts
 - [ ] Bilingual (IT/EN) functionality
 - [ ] Responsive on mobile and tablet
 - [ ] All UI elements accessible and touch-friendly
+- [ ] Discovery grid displays correctly
+- [ ] Secret mode works for sphere/vision
+- [ ] Already-explored alert works
+- [ ] Remaining counter updates on public discoveries only
 
 ## File Structure
-
-The HTML file should contain:
 
 ```html
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <!-- Meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crypta</title>
     <style>/* All CSS */</style>
 </head>
 <body>
-    <!-- All HTML screens and modals -->
+    <!-- Start screen -->
+    <!-- Game screen with discovery grid -->
+    <!-- Modals (confirmation dialogs) -->
+    
     <script>
         // Images in base64
-        const IMAGES = { ... };
+        const IMAGES = { 
+            monster: 'data:image/png;base64,...',
+            chest: 'data:image/png;base64,...',
+            // etc.
+        };
 
         // Localized texts
-        const TEXTS = { it: {...}, en: {...} };
+        const TEXTS = {
+            it: {
+                newGame: 'Nuova partita',
+                enterCode: 'Inserisci codice',
+                secretMode: 'Modalità segreta',
+                alreadyExplored: 'Questa casella è già stata esplorata',
+                confirm: 'Conferma',
+                // etc.
+            },
+            en: {
+                newGame: 'New Game',
+                enterCode: 'Enter Code',
+                secretMode: 'Secret Mode',
+                alreadyExplored: 'This cell was already explored',
+                confirm: 'Confirm',
+                // etc.
+            }
+        };
 
         // PRNG (mulberry32)
         function mulberry32(seed) { ... }
 
-        // Dungeon generation
-        function generateDungeon(seed, playerCount) { ... }
+        // Dungeon generation with sudoku + constraints
+        function generateDungeon(seed) { ... }
+
+        // Post-generation validation
+        function validateConstraints(layout) { ... }
+
+        // Generate with retry logic
+        function generateWithRetry(baseSeed) { ... }
 
         // UI logic
         // ...
@@ -265,11 +453,14 @@ When working on this project:
 
 1. **NEVER** suggest npm packages, frameworks, or external libraries
 2. **NEVER** split code into multiple files
-4. **ALWAYS** test that the same seed produces the same layout
-5. **ALWAYS** maintain bilingual support (IT/EN)
-6. **ALWAYS** respect the placement constraints exactly as specified
+3. **ALWAYS** test that the same seed produces the same layout
+4. **ALWAYS** maintain bilingual support (IT/EN)
+5. **ALWAYS** respect the placement constraints exactly as specified
+6. **ALWAYS** validate constraints after generation
 7. **NEVER** add server-side functionality
 8. **ALWAYS** ensure the file works completely offline
+9. **ALWAYS** implement the visual discovery grid (not text history)
+10. **ALWAYS** implement secret mode for sphere/vision discoveries
 
 ## Code Quality Standards
 
@@ -287,24 +478,26 @@ Companion app v1.0
 
 ---
 
-## Quick Reference: Placement Constraints Summary
+## Quick Reference: Constraint Summary
 
-| Element | Key Constraint |
-|---------|----------------|
-| Spheres | Same diagonal (col-row value) |
+### Sudoku Rule (applies to ALL element types)
+Each of the 7 element types appears exactly **once per row** and **once per column**.
+
+### Additional Placement Constraints
+
+| Element | Additional Constraint |
+|---------|----------------------|
+| Monsters | Not adjacent to each other (8 directions) |
+| Chests | Must have ≥1 adjacent monster |
+| Spheres | Both on same diagonal |
 | Passages | Manhattan distance ≥ 4 |
-| Potions | Max 1 per row/column |
-| Traps | Not on edges, not adjacent |
-| Chests | Not adjacent |
-| Keys | Within 2 cells of ≥1 chest |
-| Swords | Not adjacent to keys |
-| Monsters | Not adjacent |
-| Empty | Adjacent to ≥1 chest AND ≥1 monster |
+| Traps | Not on edge cells (rows 1,7 or columns A,G) |
+| Swords, Keys, Potions, Empty | Sudoku only |
 
-## Distance Formulas
+### Distance Formulas
 
 - **Manhattan**: `|col1-col2| + |row1-row2|`
-- **Chebyshev**: `max(|col1-col2|, |row1-row2|)`
-- **Euclidean**: `sqrt((col1-col2)² + (row1-row2)²)`
-- **Diagonal check**: Same `col-row` value
-- **Adjacency**: Chebyshev distance = 1
+- **Chebyshev** (adjacency): `max(|col1-col2|, |row1-row2|)`
+- **Same diagonal**: `(col1-row1) === (col2-row2)` OR `(col1+row1) === (col2+row2)`
+- **Adjacency check**: Chebyshev distance = 1
+- **Edge check**: row = 0 OR row = 6 OR col = 0 OR col = 6 (0-indexed)
