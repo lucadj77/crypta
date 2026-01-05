@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Crypta - Companion App</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,92 +11,104 @@
         .screen { display: none; }
         .screen.active { display: block; }
         h1 { font-size: 3em; text-align: center; letter-spacing: 0.3em; margin: 30px 0; color: #c9a227; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .btn { background-color: #5c4033; color: #f0e6d3; border: 2px solid #8b7355; padding: 15px 30px; font-size: 1.1em; cursor: pointer; border-radius: 5px; transition: all 0.2s; font-family: 'Segoe UI', Arial, sans-serif; margin: 10px; min-width: 200px; }
+        .btn { background-color: #5c4033; color: #f0e6d3; border: 2px solid #8b7355; padding: 15px 30px; font-size: 1.1em; cursor: pointer; border-radius: 5px; transition: all 0.2s; font-family: 'Segoe UI', Arial, sans-serif; margin: 10px; min-width: 200px; touch-action: manipulation; }
         .btn:hover { background-color: #8b6914; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .btn:active { transform: translateY(0); }
         .btn-group { display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 30px 0; }
         .lang-selector { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
-        .lang-btn { padding: 8px 15px; background-color: #2d2d44; border: 1px solid #8b7355; color: #f0e6d3; cursor: pointer; border-radius: 3px; font-size: 0.9em; }
+        .lang-btn { padding: 8px 15px; background-color: #2d2d44; border: 1px solid #8b7355; color: #f0e6d3; cursor: pointer; border-radius: 3px; font-size: 0.9em; touch-action: manipulation; }
         .lang-btn.active { background-color: #c9a227; color: #1a1a2e; }
-        .player-selector { display: flex; justify-content: center; gap: 20px; margin: 30px 0; }
-        .player-btn { width: 80px; height: 80px; font-size: 2em; padding: 0; min-width: 0; }
-        .player-btn.selected { background-color: #c9a227; color: #1a1a2e; }
         input[type="text"] { background-color: #2d2d44; border: 2px solid #8b7355; color: #f0e6d3; padding: 15px; font-size: 1.2em; text-align: center; border-radius: 5px; width: 100%; max-width: 300px; margin: 20px auto; display: block; font-family: 'Courier New', monospace; letter-spacing: 0.3em; }
-        .game-header { background-color: #2d2d44; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .game-header { background-color: #2d2d44; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .game-code { font-family: 'Courier New', monospace; font-size: 1.5em; letter-spacing: 0.2em; color: #c9a227; }
         .copy-btn { padding: 8px 15px; min-width: 0; margin: 0; }
         .coordinate-selector { background-color: #2d2d44; padding: 20px; border-radius: 5px; margin: 20px 0; }
-        .coord-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; }
-        .coord-btn { width: 50px; height: 50px; padding: 0; min-width: 0; margin: 0; font-size: 1.2em; }
+        .coord-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 15px 0; }
+        .coord-btn { width: 44px; height: 44px; padding: 0; min-width: 0; margin: 0; font-size: 1.2em; }
         .coord-btn.selected { background-color: #c9a227; color: #1a1a2e; }
         .selection-display { text-align: center; font-size: 1.3em; margin: 20px 0; min-height: 40px; }
         .confirm-btn { display: block; margin: 20px auto; }
-        .history { background-color: #2d2d44; padding: 20px; border-radius: 5px; margin: 20px 0; }
-        .history h3 { color: #c9a227; margin-bottom: 15px; }
-        .history-grid-container { margin-bottom: 15px; }
-        .history-grid-wrapper { display: flex; flex-direction: column; align-items: center; }
-        .history-col-labels { display: flex; justify-content: center; margin-left: 30px; }
-        .history-col-label { width: 40px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
-        .history-row-wrapper { display: flex; align-items: center; }
-        .history-row-label { width: 25px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
-        .history-grid { display: grid; gap: 3px; }
-        .history-cell { width: 40px; height: 40px; background-color: #1a1a2e; border: 1px solid #8b7355; border-radius: 3px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .history-cell.hidden { background-color: #3d3d5c; }
-        .history-cell.revealed { background-color: #1a1a2e; }
-        .history-cell.sphere-revealed { box-shadow: 0 0 8px #9b59b6; border-color: #9b59b6; }
-        .history-cell img { max-width: 85%; max-height: 85%; object-fit: contain; }
-        .history-cell .empty-icon { width: 12px; height: 12px; border: 2px solid #666; border-radius: 50%; }
-        .sphere-mode { background-color: #2d2d44; padding: 15px; border-radius: 5px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Discovery Grid */
+        .discovery-section { background-color: #2d2d44; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .discovery-section h3 { color: #c9a227; margin-bottom: 15px; text-align: center; }
+        .discovery-grid-container { display: flex; flex-direction: column; align-items: center; }
+        .discovery-col-labels { display: flex; margin-left: 30px; }
+        .discovery-col-label { width: 40px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
+        .discovery-row-wrapper { display: flex; align-items: center; }
+        .discovery-row-label { width: 25px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
+        .discovery-grid { display: grid; grid-template-columns: repeat(7, 40px); gap: 3px; }
+        .discovery-cell { width: 40px; height: 40px; background-color: #3d3d5c; border: 1px solid #8b7355; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #666; }
+        .discovery-cell.revealed { background-color: #1a1a2e; }
+        .discovery-cell.secret { background-color: #2a1a3e; border-color: #6a0dad; box-shadow: 0 0 6px rgba(106, 13, 173, 0.5); }
+        .discovery-cell img { max-width: 85%; max-height: 85%; object-fit: contain; }
+        .discovery-cell .empty-icon { width: 14px; height: 14px; background-color: #666; border-radius: 50%; }
+        .discovery-cell .secret-icon { width: 24px; height: 24px; position: relative; }
+        .discovery-cell .secret-icon::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 12px; border: 2px solid #9b59b6; border-radius: 50%; }
+        .discovery-cell .secret-icon::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background-color: #9b59b6; border-radius: 50%; }
+
+        /* Secret Mode */
+        .secret-mode { background-color: #2d2d44; padding: 15px; border-radius: 5px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+        .secret-mode.active-mode { border: 2px solid #6a0dad; box-shadow: 0 0 10px rgba(106, 13, 173, 0.3); }
         .toggle { position: relative; width: 60px; height: 30px; background-color: #5c4033; border-radius: 15px; cursor: pointer; transition: background-color 0.3s; }
-        .toggle.active { background-color: #2e7d32; }
+        .toggle.active { background-color: #6a0dad; }
         .toggle-slider { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; background-color: #f0e6d3; border-radius: 50%; transition: transform 0.3s; }
         .toggle.active .toggle-slider { transform: translateX(30px); }
+
+        /* Remaining Counter */
         .remaining { background-color: #2d2d44; padding: 20px; border-radius: 5px; margin: 20px 0; }
         .remaining h3 { color: #c9a227; margin-bottom: 15px; }
-        .remaining-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; }
-        .remaining-item { text-align: center; }
-        .remaining-item img { width: 40px; height: 40px; object-fit: contain; }
-        .remaining-count { font-size: 1.5em; color: #c9a227; margin-left: 5px; }
+        .remaining-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 15px; }
+        .remaining-item { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .remaining-item img { width: 36px; height: 36px; object-fit: contain; }
+        .remaining-item .empty-icon-small { width: 24px; height: 24px; background-color: #666; border-radius: 50%; margin: 6px 0; }
+        .remaining-count { font-size: 1.3em; color: #c9a227; margin-top: 5px; }
+
+        /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 1000; }
         .modal.active { display: flex; justify-content: center; align-items: center; }
         .modal-content { background-color: #2d2d44; padding: 40px; border-radius: 10px; text-align: center; max-width: 90%; max-height: 90%; overflow-y: auto; }
-        .modal-content img { max-width: 300px; max-height: 300px; object-fit: contain; margin: 20px auto; }
-        .modal-content h2 { color: #c9a227; font-size: 2em; margin: 20px 0; }
+        .modal-content img { max-width: 200px; max-height: 200px; object-fit: contain; margin: 20px auto; display: block; }
+        .modal-content h2 { color: #c9a227; font-size: 1.8em; margin: 20px 0; }
+        .modal-content .empty-icon-large { width: 80px; height: 80px; background-color: #666; border-radius: 50%; margin: 20px auto; }
+        .already-explored-warning { background-color: rgba(139, 0, 0, 0.3); border: 2px solid #8b0000; border-radius: 5px; padding: 10px; margin: 15px 0; color: #ff6b6b; font-weight: bold; }
         .error { color: #c62828; text-align: center; margin: 20px 0; font-size: 1.1em; }
+
+        /* Full Map Grid */
         .grid-display { display: grid; gap: 5px; margin: 20px auto; max-width: 600px; }
         .grid-cell { background-color: #2d2d44; border: 1px solid #8b7355; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; position: relative; border-radius: 3px; }
         .grid-cell img { max-width: 80%; max-height: 80%; object-fit: contain; }
-        .grid-cell .coord { position: absolute; top: 2px; left: 2px; font-size: 0.7em; color: #a0a0a0; }
-        @media (max-width: 600px) { h1 { font-size: 2em; } .coord-btn { width: 40px; height: 40px; } }
+        .grid-cell .coord { position: absolute; top: 2px; left: 2px; font-size: 0.6em; color: #a0a0a0; }
+        .grid-cell .empty-icon { width: 20px; height: 20px; background-color: #666; border-radius: 50%; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2em; }
+            .coord-btn { width: 40px; height: 40px; font-size: 1em; }
+            .discovery-cell { width: 36px; height: 36px; }
+            .discovery-grid { grid-template-columns: repeat(7, 36px); }
+            .discovery-col-label { width: 36px; }
+            .discovery-row-label { height: 36px; }
+        }
+        @media (max-width: 400px) {
+            .discovery-cell { width: 32px; height: 32px; }
+            .discovery-grid { grid-template-columns: repeat(7, 32px); }
+            .discovery-col-label { width: 32px; }
+            .discovery-row-label { height: 32px; }
+        }
     </style>
 </head>
 <body>
     <div class="lang-selector">
-        <button class="lang-btn active" onclick="setLanguage('it')">IT</button>
-        <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+        <button class="lang-btn active" onclick="setLanguage('it')" aria-label="Italiano">IT</button>
+        <button class="lang-btn" onclick="setLanguage('en')" aria-label="English">EN</button>
     </div>
 
     <div id="screen-start" class="screen active">
         <div class="container">
             <h1>CRYPTA</h1>
             <div class="btn-group">
-                <button class="btn" onclick="showNewGame()" data-i18n="new_game">Nuova partita</button>
+                <button class="btn" onclick="startNewGame()" data-i18n="new_game">Nuova partita</button>
                 <button class="btn" onclick="showEnterCode()" data-i18n="enter_code">Inserisci codice</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="screen-new-game" class="screen">
-        <div class="container">
-            <h1>CRYPTA</h1>
-            <h2 style="text-align: center; margin: 20px 0;" data-i18n="players">Giocatori</h2>
-            <div class="player-selector">
-                <button class="player-btn" onclick="selectPlayers(2)">2</button>
-                <button class="player-btn" onclick="selectPlayers(3)">3</button>
-                <button class="player-btn" onclick="selectPlayers(4)">4</button>
-            </div>
-            <div class="btn-group">
-                <button class="btn" onclick="startNewGame()" data-i18n="start">Inizia</button>
-                <button class="btn" onclick="showStart()" data-i18n="back">Indietro</button>
             </div>
         </div>
     </div>
@@ -105,7 +117,7 @@
         <div class="container">
             <h1>CRYPTA</h1>
             <h2 style="text-align: center; margin: 20px 0;" data-i18n="game_code">Codice partita</h2>
-            <input type="text" id="code-input" maxlength="6" placeholder="000000">
+            <input type="text" id="code-input" maxlength="6" placeholder="000000" inputmode="numeric" pattern="[0-9]*">
             <div id="error-message" class="error"></div>
             <div class="btn-group">
                 <button class="btn" onclick="loadGame()" data-i18n="confirm">Conferma</button>
@@ -118,31 +130,37 @@
         <div class="container">
             <h1>CRYPTA</h1>
             <div class="game-header">
-                <div><span data-i18n="game_code">Codice</span>: <span class="game-code" id="current-code">000000</span></div>
-                <button class="btn copy-btn" onclick="copyCode()" data-i18n="copy_code">Copia</button>
+                <div><span data-i18n="code_label">Codice</span>: <span class="game-code" id="current-code">000000</span></div>
+                <button class="btn copy-btn" onclick="copyCode()" data-i18n="copy">Copia</button>
             </div>
+
+            <div class="discovery-section">
+                <h3 data-i18n="discovery_grid">Griglia di scoperta</h3>
+                <div class="discovery-grid-container" id="discovery-grid-container"></div>
+            </div>
+
             <div class="coordinate-selector">
-                <h3 style="color: #c9a227; text-align: center; margin-bottom: 15px;"><span data-i18n="select_cell">Seleziona una casella</span></h3>
+                <h3 style="color: #c9a227; text-align: center; margin-bottom: 15px;" data-i18n="select_cell">Seleziona una casella</h3>
                 <div class="coord-buttons" id="col-buttons"></div>
                 <div class="coord-buttons" id="row-buttons"></div>
                 <div class="selection-display" id="selection-display">-</div>
                 <button class="btn confirm-btn" onclick="revealCell()" data-i18n="confirm">Conferma</button>
             </div>
-            <div class="sphere-mode">
-                <span data-i18n="sphere_mode">Modalità sfera</span>
-                <div class="toggle" id="sphere-toggle" onclick="toggleSphere()"><div class="toggle-slider"></div></div>
+
+            <div class="secret-mode" id="secret-mode-container">
+                <span data-i18n="secret_mode">Modalit&agrave; segreta</span>
+                <div class="toggle" id="secret-toggle" onclick="toggleSecretMode()" role="switch" aria-checked="false">
+                    <div class="toggle-slider"></div>
+                </div>
             </div>
-            <div class="history">
-                <h3 data-i18n="history">Cronologia</h3>
-                <div class="history-grid-container" id="history-grid-container"></div>
-                <button class="btn" onclick="clearHistory()" data-i18n="clear_history">Cancella</button>
-            </div>
+
             <div class="remaining">
                 <h3 data-i18n="remaining">Rimanenti</h3>
                 <div class="remaining-grid" id="remaining-grid"></div>
             </div>
+
             <div class="btn-group">
-                <button class="btn" onclick="showFullMap()" data-i18n="show_all">Mostra schema</button>
+                <button class="btn" onclick="showFullMap()" data-i18n="show_map">Mostra mappa</button>
                 <button class="btn" onclick="confirmNewGame()" data-i18n="new_game_btn">Nuova partita</button>
             </div>
         </div>
@@ -160,7 +178,9 @@
 
     <div id="modal-reveal" class="modal">
         <div class="modal-content">
+            <div id="already-explored-alert" class="already-explored-warning" style="display: none;"></div>
             <img id="reveal-img" src="" alt="">
+            <div id="reveal-empty-icon" class="empty-icon-large" style="display: none;"></div>
             <h2 id="reveal-name"></h2>
             <button class="btn" onclick="closeReveal()" data-i18n="close">Chiudi</button>
         </div>
@@ -170,288 +190,747 @@
         <div class="modal-content">
             <p id="confirm-message" style="font-size: 1.2em; margin: 20px 0;"></p>
             <div class="btn-group">
-                <button class="btn" onclick="confirmAction()" data-i18n="yes">Sì</button>
+                <button class="btn" onclick="confirmAction()" data-i18n="yes">S&igrave;</button>
                 <button class="btn" onclick="closeConfirm()" data-i18n="cancel">Annulla</button>
             </div>
         </div>
     </div>
 
     <script>
-const IMAGES={key:'img/chiave.png',monster:'img/mostro.png',passage:'img/passaggio.png',potion:'img/pozione.png',chest:'img/scrigno.png',sphere:'img/sfera.png',sword:'img/spada.png',trap:'img/trappola.png'};
-const TEXTS={it:{lang_select:'Seleziona lingua',new_game:'Nuova partita',enter_code:'Inserisci codice',players:'Giocatori',start:'Inizia',game_code:'Codice partita',copy_code:'Copia codice',confirm:'Conferma',close:'Chiudi',show_all:'Mostra schema',show_all_confirm:"Sei sicuro di voler vedere l'intero schema? Questa azione non può essere annullata.",yes:'Sì',cancel:'Annulla',back:'Indietro',new_game_btn:'Nuova partita',history:'Cronologia',clear_history:'Cancella',sphere_mode:'Modalità sfera',sphere_mode_on:'Attiva',sphere_mode_off:'Disattiva',remaining:'Rimanenti',empty_cell:'Casella vuota',invalid_code:'Codice non valido',select_cell:'Seleziona una casella',discovered_via_sphere:'(sfera)',monster:'Mostro',chest:'Scrigno',key:'Chiave',sword:'Spada',potion:'Pozione',trap:'Trappola',passage:'Passaggio segreto',sphere:'Sfera',empty:'Vuoto'},en:{lang_select:'Select language',new_game:'New game',enter_code:'Enter code',players:'Players',start:'Start',game_code:'Game code',copy_code:'Copy code',confirm:'Confirm',close:'Close',show_all:'Show map',show_all_confirm:'Are you sure you want to see the entire map? This action cannot be undone.',yes:'Yes',cancel:'Cancel',back:'Back',new_game_btn:'New game',history:'History',clear_history:'Clear',sphere_mode:'Sphere mode',sphere_mode_on:'On',sphere_mode_off:'Off',remaining:'Remaining',empty_cell:'Empty cell',invalid_code:'Invalid code',select_cell:'Select a cell',discovered_via_sphere:'(sphere)',monster:'Monster',chest:'Chest',key:'Key',sword:'Sword',potion:'Potion',trap:'Trap',passage:'Secret passage',sphere:'Sphere',empty:'Empty'}};
-let gameState={language:'it',playerCount:0,code:'',grid:[],gridSize:0,selectedCol:-1,selectedRow:-1,sphereMode:false,history:[],revealed:{},remaining:{}};
-function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
-const ELEMENT_COUNTS={2:{monster:4,chest:5,key:5,sword:4,potion:5,trap:3,passage:2,sphere:2,empty:6},3:{monster:6,chest:7,key:7,sword:6,potion:6,trap:4,passage:2,sphere:2,empty:9},4:{monster:8,chest:9,key:9,sword:8,potion:7,trap:5,passage:2,sphere:2,empty:14}};
-const GRID_SIZES={2:6,3:7,4:8};
-function showScreen(a){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(a).classList.add('active')}
-function showStart(){showScreen('screen-start')}
-function showNewGame(){showScreen('screen-new-game')}
-function showEnterCode(){document.getElementById('code-input').value='';document.getElementById('error-message').textContent='';showScreen('screen-enter-code')}
-function selectPlayers(a){gameState.playerCount=a;document.querySelectorAll('.player-btn').forEach(b=>b.classList.remove('selected'));event.target.classList.add('selected')}
-function setLanguage(a){gameState.language=a;document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');updateLanguage()}
-function updateLanguage(){const a=TEXTS[gameState.language];document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(a[k])el.textContent=a[k]})}
-function startNewGame(){if(!gameState.playerCount)return;const seed=Math.floor(Math.random()*100000);gameState.code=String(gameState.playerCount)+String(seed).padStart(5,'0');generateDungeon(seed,gameState.playerCount);initGameUI();showScreen('screen-game')}
-function loadGame(){const c=document.getElementById('code-input').value;if(c.length!==6||!/^\d+$/.test(c)){document.getElementById('error-message').textContent=TEXTS[gameState.language].invalid_code;return}const playerDigit=parseInt(c.charAt(0));if(playerDigit<2||playerDigit>4){document.getElementById('error-message').textContent=TEXTS[gameState.language].invalid_code;return}gameState.code=c;gameState.playerCount=playerDigit;const seed=parseInt(c.substring(1));generateDungeon(seed,gameState.playerCount);initGameUI();showScreen('screen-game')}
-function validateAllConstraints(grid,size,counts){
-    // Raccoglie posizioni di tutti gli elementi
-    const elements={sphere:[],passage:[],potion:[],trap:[],chest:[],key:[],sword:[],monster:[],empty:[]};
-    for(let r=0;r<size;r++)for(let c=0;c<size;c++)elements[grid[r][c]].push({r,c});
+// Image paths
+const IMAGES = {
+    key: 'img/chiave.png',
+    monster: 'img/mostro.png',
+    passage: 'img/passaggio.png',
+    potion: 'img/pozione.png',
+    chest: 'img/scrigno.png',
+    sphere: 'img/sfera.png',
+    sword: 'img/spada.png',
+    trap: 'img/trappola.png'
+};
 
-    // 1. Verifica conteggi esatti
-    if(elements.sphere.length!==2)return{valid:false,reason:'sphere count'};
-    if(elements.passage.length!==2)return{valid:false,reason:'passage count'};
-    if(elements.potion.length!==counts.potion)return{valid:false,reason:'potion count'};
-    if(elements.trap.length!==counts.trap)return{valid:false,reason:'trap count'};
-    if(elements.chest.length!==counts.chest)return{valid:false,reason:'chest count'};
-    if(elements.key.length!==counts.key)return{valid:false,reason:'key count'};
-    if(elements.sword.length!==counts.sword)return{valid:false,reason:'sword count'};
-    if(elements.monster.length!==counts.monster)return{valid:false,reason:'monster count'};
-    if(elements.empty.length!==counts.empty)return{valid:false,reason:'empty count'};
-
-    function isAdjacent(r1,c1,r2,c2){return Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1&&!(r1===r2&&c1===c2)}
-
-    // 2. Sfere sulla stessa diagonale
-    const s=elements.sphere;
-    if(s[0].c-s[0].r!==s[1].c-s[1].r)return{valid:false,reason:'spheres not on same diagonal'};
-
-    // 3. Passaggi con distanza Manhattan >= 4
-    const p=elements.passage;
-    if(Math.abs(p[0].r-p[1].r)+Math.abs(p[0].c-p[1].c)<4)return{valid:false,reason:'passages too close'};
-
-    // 4. Pozioni: max 1 per riga e colonna
-    const potionRows=new Set(),potionCols=new Set();
-    for(const pot of elements.potion){
-        if(potionRows.has(pot.r)||potionCols.has(pot.c))return{valid:false,reason:'potions in same row/col'};
-        potionRows.add(pot.r);potionCols.add(pot.c);
+// Localized texts
+const TEXTS = {
+    it: {
+        new_game: 'Nuova partita',
+        enter_code: 'Inserisci codice',
+        game_code: 'Codice partita',
+        code_label: 'Codice',
+        copy: 'Copia',
+        confirm: 'Conferma',
+        close: 'Chiudi',
+        show_map: 'Mostra mappa',
+        show_map_confirm: "Sei sicuro? Questa azione non può essere annullata.",
+        new_game_confirm: "Sei sicuro di voler iniziare una nuova partita?",
+        yes: 'Sì',
+        cancel: 'Annulla',
+        back: 'Indietro',
+        new_game_btn: 'Nuova partita',
+        discovery_grid: 'Griglia di scoperta',
+        secret_mode: 'Modalità segreta',
+        remaining: 'Rimanenti',
+        invalid_code: 'Codice non valido (6 cifre)',
+        select_cell: 'Seleziona una casella',
+        already_explored: 'Questa casella è già stata esplorata!',
+        monster: 'Mostro',
+        chest: 'Scrigno',
+        key: 'Chiave',
+        sword: 'Spada',
+        potion: 'Pozione',
+        trap: 'Trappola',
+        passage: 'Passaggio segreto',
+        sphere: 'Sfera',
+        empty: 'Vuoto'
+    },
+    en: {
+        new_game: 'New game',
+        enter_code: 'Enter code',
+        game_code: 'Game code',
+        code_label: 'Code',
+        copy: 'Copy',
+        confirm: 'Confirm',
+        close: 'Close',
+        show_map: 'Show map',
+        show_map_confirm: "Are you sure? This action cannot be undone.",
+        new_game_confirm: "Are you sure you want to start a new game?",
+        yes: 'Yes',
+        cancel: 'Cancel',
+        back: 'Back',
+        new_game_btn: 'New game',
+        discovery_grid: 'Discovery grid',
+        secret_mode: 'Secret mode',
+        remaining: 'Remaining',
+        invalid_code: 'Invalid code (6 digits)',
+        select_cell: 'Select a cell',
+        already_explored: 'This cell was already explored!',
+        monster: 'Monster',
+        chest: 'Chest',
+        key: 'Key',
+        sword: 'Sword',
+        potion: 'Potion',
+        trap: 'Trap',
+        passage: 'Secret passage',
+        sphere: 'Sphere',
+        empty: 'Empty'
     }
+};
 
-    // 5. Trappole: non sui bordi e non adiacenti tra loro
-    for(const trap of elements.trap){
-        if(trap.r===0||trap.r===size-1||trap.c===0||trap.c===size-1)return{valid:false,reason:'trap on edge'};
-        for(const other of elements.trap){
-            if(trap!==other&&isAdjacent(trap.r,trap.c,other.r,other.c))return{valid:false,reason:'traps adjacent'};
+// Game state
+let gameState = {
+    language: 'it',
+    code: '',
+    grid: [],
+    selectedCol: -1,
+    selectedRow: -1,
+    secretMode: false,
+    discovered: {}, // {coordKey: {element, isPublic}}
+    remaining: {},
+    mapRevealed: false
+};
+
+const GRID_SIZE = 7;
+const COLUMNS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+// Element types for sudoku structure
+const ELEMENT_TYPES = ['monster', 'chest', 'key', 'sword', 'potion', 'empty', 'other'];
+
+// Mulberry32 PRNG
+function mulberry32(seed) {
+    return function() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
+// Fisher-Yates shuffle with seeded random
+function shuffle(array, random) {
+    const result = [...array];
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+}
+
+// Check if two positions are adjacent (8 directions)
+function isAdjacent(r1, c1, r2, c2) {
+    return Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1 && !(r1 === r2 && c1 === c2);
+}
+
+// Check if position is on edge
+function isOnEdge(r, c) {
+    return r === 0 || r === GRID_SIZE - 1 || c === 0 || c === GRID_SIZE - 1;
+}
+
+// Manhattan distance
+function manhattanDistance(r1, c1, r2, c2) {
+    return Math.abs(r1 - r2) + Math.abs(c1 - c2);
+}
+
+// Check if two positions are on same diagonal
+function onSameDiagonal(r1, c1, r2, c2) {
+    return (c1 - r1 === c2 - r2) || (c1 + r1 === c2 + r2);
+}
+
+// Generate a valid Latin square (sudoku-like) placement
+function generateLatinSquare(random) {
+    // Start with a base Latin square and shuffle rows/columns
+    const base = [];
+    for (let r = 0; r < GRID_SIZE; r++) {
+        base[r] = [];
+        for (let c = 0; c < GRID_SIZE; c++) {
+            base[r][c] = (r + c) % GRID_SIZE;
         }
     }
 
-    // 6. Scrigni: non adiacenti tra loro
-    for(const chest of elements.chest){
-        for(const other of elements.chest){
-            if(chest!==other&&isAdjacent(chest.r,chest.c,other.r,other.c))return{valid:false,reason:'chests adjacent'};
+    // Shuffle rows
+    const rowOrder = shuffle([0, 1, 2, 3, 4, 5, 6], random);
+    const colOrder = shuffle([0, 1, 2, 3, 4, 5, 6], random);
+    const typeOrder = shuffle([0, 1, 2, 3, 4, 5, 6], random);
+
+    const result = [];
+    for (let r = 0; r < GRID_SIZE; r++) {
+        result[r] = [];
+        for (let c = 0; c < GRID_SIZE; c++) {
+            const typeIndex = base[rowOrder[r]][colOrder[c]];
+            result[r][c] = ELEMENT_TYPES[typeOrder[typeIndex]];
         }
     }
 
-    // 7. Chiavi: entro distanza Chebyshev 2 da almeno uno scrigno
-    for(const key of elements.key){
-        let nearChest=false;
-        for(const chest of elements.chest){
-            if(Math.max(Math.abs(key.r-chest.r),Math.abs(key.c-chest.c))<=2){nearChest=true;break}
-        }
-        if(!nearChest)return{valid:false,reason:'key not near chest'};
-    }
+    return result;
+}
 
-    // 8. Spade: non adiacenti a chiavi
-    for(const sword of elements.sword){
-        for(const key of elements.key){
-            if(isAdjacent(sword.r,sword.c,key.r,key.c))return{valid:false,reason:'sword adjacent to key'};
+// Collect positions of each element type
+function collectPositions(grid) {
+    const positions = {};
+    ELEMENT_TYPES.forEach(type => positions[type] = []);
+
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            positions[grid[r][c]].push({r, c});
         }
     }
+    return positions;
+}
 
-    // 9. Mostri: non adiacenti tra loro
-    for(const monster of elements.monster){
-        for(const other of elements.monster){
-            if(monster!==other&&isAdjacent(monster.r,monster.c,other.r,other.c))return{valid:false,reason:'monsters adjacent'};
+// Validate monster constraint: no two monsters adjacent
+function validateMonsters(positions) {
+    const monsters = positions.monster;
+    for (let i = 0; i < monsters.length; i++) {
+        for (let j = i + 1; j < monsters.length; j++) {
+            if (isAdjacent(monsters[i].r, monsters[i].c, monsters[j].r, monsters[j].c)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Validate chest constraint: each chest must have at least one adjacent monster
+function validateChests(positions) {
+    const chests = positions.chest;
+    const monsters = positions.monster;
+
+    for (const chest of chests) {
+        let hasAdjacentMonster = false;
+        for (const monster of monsters) {
+            if (isAdjacent(chest.r, chest.c, monster.r, monster.c)) {
+                hasAdjacentMonster = true;
+                break;
+            }
+        }
+        if (!hasAdjacentMonster) return false;
+    }
+    return true;
+}
+
+// Assign subtypes to "other" cells
+function assignOtherSubtypes(otherPositions, random) {
+    // Need to assign: 3 traps, 2 spheres, 2 passages
+    // Constraints:
+    // - Spheres: same diagonal
+    // - Passages: Manhattan distance >= 4
+    // - Traps: not on edges
+
+    const n = otherPositions.length;
+    if (n !== 7) return null;
+
+    // Find all valid sphere pairs (same diagonal)
+    const spherePairs = [];
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (onSameDiagonal(otherPositions[i].r, otherPositions[i].c,
+                               otherPositions[j].r, otherPositions[j].c)) {
+                spherePairs.push([i, j]);
+            }
         }
     }
 
-    // 10. Vuoti: adiacenti a scrigno E mostro
-    for(const empty of elements.empty){
-        let hasChest=false,hasMonster=false;
-        for(let dr=-1;dr<=1;dr++){
-            for(let dc=-1;dc<=1;dc++){
-                if(dr===0&&dc===0)continue;
-                const nr=empty.r+dr,nc=empty.c+dc;
-                if(nr>=0&&nr<size&&nc>=0&&nc<size){
-                    if(grid[nr][nc]==='chest')hasChest=true;
-                    if(grid[nr][nc]==='monster')hasMonster=true;
+    // Find all valid passage pairs (Manhattan >= 4)
+    const passagePairs = [];
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (manhattanDistance(otherPositions[i].r, otherPositions[i].c,
+                                  otherPositions[j].r, otherPositions[j].c) >= 4) {
+                passagePairs.push([i, j]);
+            }
+        }
+    }
+
+    // Find all valid trap positions (not on edge)
+    const trapCandidates = [];
+    for (let i = 0; i < n; i++) {
+        if (!isOnEdge(otherPositions[i].r, otherPositions[i].c)) {
+            trapCandidates.push(i);
+        }
+    }
+
+    // Shuffle for randomness
+    const shuffledSpherePairs = shuffle(spherePairs, random);
+    const shuffledPassagePairs = shuffle(passagePairs, random);
+
+    // Try to find a valid assignment
+    for (const spherePair of shuffledSpherePairs) {
+        for (const passagePair of shuffledPassagePairs) {
+            // Check no overlap between spheres and passages
+            const usedIndices = new Set([...spherePair, ...passagePair]);
+            if (usedIndices.size !== 4) continue;
+
+            // Remaining indices are trap candidates
+            const remainingIndices = [];
+            for (let i = 0; i < n; i++) {
+                if (!usedIndices.has(i)) remainingIndices.push(i);
+            }
+
+            // Check all remaining can be traps (not on edge)
+            let allTrapsValid = true;
+            for (const idx of remainingIndices) {
+                if (isOnEdge(otherPositions[idx].r, otherPositions[idx].c)) {
+                    allTrapsValid = false;
+                    break;
                 }
             }
+
+            if (allTrapsValid && remainingIndices.length === 3) {
+                return {
+                    spheres: spherePair.map(i => otherPositions[i]),
+                    passages: passagePair.map(i => otherPositions[i]),
+                    traps: remainingIndices.map(i => otherPositions[i])
+                };
+            }
         }
-        if(!hasChest||!hasMonster)return{valid:false,reason:'empty not adjacent to chest and monster'};
     }
 
-    return{valid:true};
+    return null;
 }
 
-function generateDungeon(seed,playerCount){
-    let mainAttempts=0;
-    const maxMainAttempts=1000;
+// Validate all constraints
+function validateAllConstraints(grid, subtypes) {
+    const positions = collectPositions(grid);
 
-    while(mainAttempts<maxMainAttempts){
-        const random=mulberry32(seed+mainAttempts*1000000);
-        const size=GRID_SIZES[playerCount];
-        gameState.gridSize=size;
-        const grid=Array(size).fill(0).map(()=>Array(size).fill('empty'));
-        const counts=ELEMENT_COUNTS[playerCount];
+    // 1. Validate sudoku structure (each type appears once per row/column)
+    for (const type of ELEMENT_TYPES) {
+        const typePositions = positions[type];
+        if (typePositions.length !== 7) return { valid: false, reason: `${type} count != 7` };
 
-        function getEmptyCells(){const cells=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='empty')cells.push({r,c});return cells}
-        function isAdjacent(r1,c1,r2,c2){return Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1&&!(r1===r2&&c1===c2)}
-
-        let placementFailed=false;
-
-        // 1. Sfere (2) - stessa diagonale
-        let spherePlaced=0,attempts=0;
-        while(spherePlaced<2&&attempts<1000){
-            attempts++;
-            const diagonal=Math.floor(random()*(2*size-1))-(size-1);
-            const diagonalCells=[];
-            for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(c-r===diagonal&&grid[r][c]==='empty')diagonalCells.push({r,c});
-            if(diagonalCells.length>=2){
-                const idx1=Math.floor(random()*diagonalCells.length);
-                let idx2;do{idx2=Math.floor(random()*diagonalCells.length)}while(idx2===idx1);
-                grid[diagonalCells[idx1].r][diagonalCells[idx1].c]='sphere';
-                grid[diagonalCells[idx2].r][diagonalCells[idx2].c]='sphere';
-                spherePlaced=2;
-            }
-        }
-        if(spherePlaced<2){mainAttempts++;continue}
-
-        // 2. Passaggi (2) - distanza Manhattan >= 4
-        let passagePlaced=0;attempts=0;const passages=[];
-        while(passagePlaced<2&&attempts<1000){
-            attempts++;const empty=getEmptyCells();if(!empty.length)break;
-            const cell=empty[Math.floor(random()*empty.length)];
-            if(passagePlaced===0){grid[cell.r][cell.c]='passage';passages.push(cell);passagePlaced++}
-            else{const dist=Math.abs(cell.r-passages[0].r)+Math.abs(cell.c-passages[0].c);if(dist>=4){grid[cell.r][cell.c]='passage';passagePlaced++}}
-        }
-        if(passagePlaced<2){mainAttempts++;continue}
-
-        // 3. Pozioni - max 1 per riga e colonna
-        const potionRows=new Set(),potionCols=new Set();let potionPlaced=0;attempts=0;
-        while(potionPlaced<counts.potion&&attempts<1000){
-            attempts++;const empty=getEmptyCells();if(!empty.length)break;
-            const cell=empty[Math.floor(random()*empty.length)];
-            if(!potionRows.has(cell.r)&&!potionCols.has(cell.c)){grid[cell.r][cell.c]='potion';potionRows.add(cell.r);potionCols.add(cell.c);potionPlaced++}
-        }
-        if(potionPlaced<counts.potion){mainAttempts++;continue}
-
-        // 4. Trappole - non sui bordi, non adiacenti tra loro
-        const traps=[];let trapPlaced=0;attempts=0;
-        while(trapPlaced<counts.trap&&attempts<1000){
-            attempts++;const empty=getEmptyCells();if(!empty.length)break;
-            const cell=empty[Math.floor(random()*empty.length)];
-            if(cell.r>0&&cell.r<size-1&&cell.c>0&&cell.c<size-1){
-                let adjacent=false;for(const trap of traps)if(isAdjacent(cell.r,cell.c,trap.r,trap.c)){adjacent=true;break}
-                if(!adjacent){grid[cell.r][cell.c]='trap';traps.push(cell);trapPlaced++}
-            }
-        }
-        if(trapPlaced<counts.trap){mainAttempts++;continue}
-
-        // 5. Scrigni - non adiacenti tra loro
-        const chests=[];let chestPlaced=0;attempts=0;
-        while(chestPlaced<counts.chest&&attempts<1000){
-            attempts++;const empty=getEmptyCells();if(!empty.length)break;
-            const cell=empty[Math.floor(random()*empty.length)];
-            let adjacent=false;for(const chest of chests)if(isAdjacent(cell.r,cell.c,chest.r,chest.c)){adjacent=true;break}
-            if(!adjacent){grid[cell.r][cell.c]='chest';chests.push(cell);chestPlaced++}
-        }
-        if(chestPlaced<counts.chest){mainAttempts++;continue}
-
-        // 6. Chiavi - entro distanza 2 da almeno uno scrigno
-        let keyPlaced=0;attempts=0;
-        while(keyPlaced<counts.key&&attempts<1000){
-            attempts++;const empty=getEmptyCells();if(!empty.length)break;
-            const cell=empty[Math.floor(random()*empty.length)];
-            for(const chest of chests){
-                const dist=Math.max(Math.abs(cell.r-chest.r),Math.abs(cell.c-chest.c));
-                if(dist<=2){grid[cell.r][cell.c]='key';keyPlaced++;break}
-            }
-        }
-        if(keyPlaced<counts.key){mainAttempts++;continue}
-
-        // Raccogli posizioni chiavi
-        const keys=[];for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c]==='key')keys.push({r,c});
-
-        // 7. Spade - non adiacenti a chiavi
-        let swordPlaced=0;attempts=0;
-        while(swordPlaced<counts.sword&&attempts<1000){
-            attempts++;const empty=getEmptyCells();if(!empty.length)break;
-            const cell=empty[Math.floor(random()*empty.length)];
-            let adjacentToKey=false;for(const key of keys)if(isAdjacent(cell.r,cell.c,key.r,key.c)){adjacentToKey=true;break}
-            if(!adjacentToKey){grid[cell.r][cell.c]='sword';swordPlaced++}
-        }
-        if(swordPlaced<counts.sword){mainAttempts++;continue}
-
-        // 8. Mostri - non adiacenti tra loro
-        const monsters=[];let monsterPlaced=0;attempts=0;
-        while(monsterPlaced<counts.monster&&attempts<1000){
-            attempts++;const empty=getEmptyCells();if(!empty.length)break;
-            const cell=empty[Math.floor(random()*empty.length)];
-            let adjacent=false;for(const monster of monsters)if(isAdjacent(cell.r,cell.c,monster.r,monster.c)){adjacent=true;break}
-            if(!adjacent){grid[cell.r][cell.c]='monster';monsters.push(cell);monsterPlaced++}
-        }
-        if(monsterPlaced<counts.monster){mainAttempts++;continue}
-
-        // 9. VALIDAZIONE COMPLETA DI TUTTI I VINCOLI
-        const validation=validateAllConstraints(grid,size,counts);
-        if(validation.valid){
-            gameState.grid=grid;
-            gameState.remaining={...counts};
-            return;
-        }
-
-        mainAttempts++;
+        const rows = new Set(typePositions.map(p => p.r));
+        const cols = new Set(typePositions.map(p => p.c));
+        if (rows.size !== 7) return { valid: false, reason: `${type} duplicate row` };
+        if (cols.size !== 7) return { valid: false, reason: `${type} duplicate column` };
     }
 
-    // Se arriviamo qui, impossibile generare - riprova con seed diverso ricorsivamente
-    console.error('Generazione fallita dopo '+maxMainAttempts+' tentativi, riprovo con seed modificato');
-    generateDungeon(seed+999999999,playerCount);
-}
-function initGameUI(){document.getElementById('current-code').textContent=gameState.code;const size=gameState.gridSize;const colButtons=document.getElementById('col-buttons');const rowButtons=document.getElementById('row-buttons');colButtons.innerHTML='';rowButtons.innerHTML='';for(let i=0;i<size;i++){const colBtn=document.createElement('button');colBtn.className='btn coord-btn';colBtn.textContent=String.fromCharCode(65+i);colBtn.onclick=()=>selectCol(i);colButtons.appendChild(colBtn);const rowBtn=document.createElement('button');rowBtn.className='btn coord-btn';rowBtn.textContent=i+1;rowBtn.onclick=()=>selectRow(i);rowButtons.appendChild(rowBtn)}gameState.selectedCol=-1;gameState.selectedRow=-1;updateSelection();gameState.history=[];gameState.revealed={};updateHistory();gameState.sphereMode=false;updateSphereToggle();updateRemaining()}
-function selectCol(col){gameState.selectedCol=col;document.querySelectorAll('#col-buttons .coord-btn').forEach((btn,idx)=>btn.classList.toggle('selected',idx===col));updateSelection()}
-function selectRow(row){gameState.selectedRow=row;document.querySelectorAll('#row-buttons .coord-btn').forEach((btn,idx)=>btn.classList.toggle('selected',idx===row));updateSelection()}
-function updateSelection(){const d=document.getElementById('selection-display');if(gameState.selectedCol>=0&&gameState.selectedRow>=0){const col=String.fromCharCode(65+gameState.selectedCol);const row=gameState.selectedRow+1;d.textContent=`${col}${row}`}else d.textContent='-'}
-function revealCell(){if(gameState.selectedCol<0||gameState.selectedRow<0)return;const r=gameState.selectedRow,c=gameState.selectedCol;const element=gameState.grid[r][c];const texts=TEXTS[gameState.language];const img=document.getElementById('reveal-img');const name=document.getElementById('reveal-name');if(element==='empty'){img.src='';img.style.display='none';name.textContent=texts.empty_cell}else{img.src=IMAGES[element];img.style.display='block';name.textContent=texts[element]}document.getElementById('modal-reveal').classList.add('active');const coordKey=`${r},${c}`;const wasRevealed=gameState.revealed[coordKey];gameState.revealed[coordKey]={element,sphere:gameState.sphereMode};updateHistory();if(!wasRevealed&&gameState.remaining[element]>0){gameState.remaining[element]--;updateRemaining()}}
-function closeReveal(){document.getElementById('modal-reveal').classList.remove('active')}
-function updateHistory(){
-    const container=document.getElementById('history-grid-container');
-    const size=gameState.gridSize;
-    if(!size){container.innerHTML='';return}
-    let html='<div class="history-grid-wrapper">';
-    html+='<div class="history-col-labels">';
-    for(let c=0;c<size;c++)html+=`<div class="history-col-label">${String.fromCharCode(65+c)}</div>`;
-    html+='</div>';
-    for(let r=0;r<size;r++){
-        html+='<div class="history-row-wrapper">';
-        html+=`<div class="history-row-label">${r+1}</div>`;
-        html+=`<div class="history-grid" style="grid-template-columns:repeat(${size},40px)">`;
-        for(let c=0;c<size;c++){
-            const key=`${r},${c}`;
-            const rev=gameState.revealed[key];
-            if(rev){
-                const sphereClass=rev.sphere?' sphere-revealed':'';
-                html+=`<div class="history-cell revealed${sphereClass}">`;
-                if(rev.element==='empty'){html+='<div class="empty-icon"></div>'}
-                else{html+=`<img src="${IMAGES[rev.element]}" alt="${rev.element}">`}
-                html+='</div>';
-            }else{
-                html+='<div class="history-cell hidden">?</div>';
+    // 2. Validate monsters not adjacent
+    if (!validateMonsters(positions)) {
+        return { valid: false, reason: 'monsters adjacent' };
+    }
+
+    // 3. Validate chests have adjacent monsters
+    if (!validateChests(positions)) {
+        return { valid: false, reason: 'chest without adjacent monster' };
+    }
+
+    // 4. Validate subtypes if provided
+    if (subtypes) {
+        // Spheres on same diagonal
+        if (subtypes.spheres.length === 2) {
+            if (!onSameDiagonal(subtypes.spheres[0].r, subtypes.spheres[0].c,
+                                subtypes.spheres[1].r, subtypes.spheres[1].c)) {
+                return { valid: false, reason: 'spheres not on diagonal' };
             }
         }
-        html+='</div></div>';
+
+        // Passages Manhattan >= 4
+        if (subtypes.passages.length === 2) {
+            if (manhattanDistance(subtypes.passages[0].r, subtypes.passages[0].c,
+                                  subtypes.passages[1].r, subtypes.passages[1].c) < 4) {
+                return { valid: false, reason: 'passages too close' };
+            }
+        }
+
+        // Traps not on edge
+        for (const trap of subtypes.traps) {
+            if (isOnEdge(trap.r, trap.c)) {
+                return { valid: false, reason: 'trap on edge' };
+            }
+        }
     }
-    html+='</div>';
-    container.innerHTML=html;
+
+    return { valid: true };
 }
-function clearHistory(){gameState.history=[];gameState.revealed={};updateHistory()}
-function toggleSphere(){gameState.sphereMode=!gameState.sphereMode;updateSphereToggle()}
-function updateSphereToggle(){document.getElementById('sphere-toggle').classList.toggle('active',gameState.sphereMode)}
-function updateRemaining(){const grid=document.getElementById('remaining-grid');const texts=TEXTS[gameState.language];grid.innerHTML='';const elements=['monster','chest','key','sword','potion','trap'];elements.forEach(elem=>{if(gameState.remaining[elem]!==undefined){const div=document.createElement('div');div.className='remaining-item';div.innerHTML=`<img src="${IMAGES[elem]}" alt="${texts[elem]}"><span class="remaining-count">${gameState.remaining[elem]}</span>`;grid.appendChild(div)}})}
-function copyCode(){navigator.clipboard.writeText(gameState.code)}
-let confirmCallback=null;
-function showFullMap(){confirmCallback=()=>{const grid=document.getElementById('full-grid');const size=gameState.gridSize;grid.style.gridTemplateColumns=`repeat(${size}, 1fr)`;grid.innerHTML='';for(let r=0;r<size;r++)for(let c=0;c<size;c++){const cell=document.createElement('div');cell.className='grid-cell';const coord=document.createElement('span');coord.className='coord';coord.textContent=`${String.fromCharCode(65+c)}${r+1}`;cell.appendChild(coord);const element=gameState.grid[r][c];if(element!=='empty'){const img=document.createElement('img');img.src=IMAGES[element];cell.appendChild(img)}grid.appendChild(cell)}showScreen('screen-full-map')};document.getElementById('confirm-message').textContent=TEXTS[gameState.language].show_all_confirm;document.getElementById('modal-confirm').classList.add('active')}
-function confirmNewGame(){confirmCallback=()=>showStart();document.getElementById('confirm-message').textContent=TEXTS[gameState.language].show_all_confirm;document.getElementById('modal-confirm').classList.add('active')}
-function confirmAction(){if(confirmCallback){confirmCallback();confirmCallback=null}closeConfirm()}
-function closeConfirm(){document.getElementById('modal-confirm').classList.remove('active')}
+
+// Main generation function with retry logic
+function generateDungeon(baseSeed) {
+    for (let attempt = 0; attempt < 1000; attempt++) {
+        const seed = baseSeed + attempt * 1000000;
+        const random = mulberry32(seed);
+
+        // Generate Latin square
+        const grid = generateLatinSquare(random);
+        const positions = collectPositions(grid);
+
+        // Try to assign subtypes to "other" cells
+        const subtypes = assignOtherSubtypes(positions.other, random);
+        if (!subtypes) continue;
+
+        // Validate all constraints
+        const validation = validateAllConstraints(grid, subtypes);
+        if (!validation.valid) continue;
+
+        // Create final grid with subtypes resolved
+        const finalGrid = grid.map(row => [...row]);
+        for (const sphere of subtypes.spheres) {
+            finalGrid[sphere.r][sphere.c] = 'sphere';
+        }
+        for (const passage of subtypes.passages) {
+            finalGrid[passage.r][passage.c] = 'passage';
+        }
+        for (const trap of subtypes.traps) {
+            finalGrid[trap.r][trap.c] = 'trap';
+        }
+
+        return finalGrid;
+    }
+
+    // Fallback: change seed and retry
+    console.warn('Generation failed after 1000 attempts, changing seed');
+    return generateDungeon((baseSeed + 1) % 1000000);
+}
+
+// UI Functions
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+function showStart() {
+    showScreen('screen-start');
+}
+
+function showEnterCode() {
+    document.getElementById('code-input').value = '';
+    document.getElementById('error-message').textContent = '';
+    showScreen('screen-enter-code');
+}
+
+function setLanguage(lang) {
+    gameState.language = lang;
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === lang.toUpperCase());
+    });
+    updateLanguage();
+}
+
+function updateLanguage() {
+    const texts = TEXTS[gameState.language];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (texts[key]) el.textContent = texts[key];
+    });
+}
+
+function startNewGame() {
+    const seed = Math.floor(Math.random() * 1000000);
+    gameState.code = String(seed).padStart(6, '0');
+    gameState.grid = generateDungeon(seed);
+    initGameUI();
+    showScreen('screen-game');
+}
+
+function loadGame() {
+    const code = document.getElementById('code-input').value.trim();
+    if (code.length !== 6 || !/^\d+$/.test(code)) {
+        document.getElementById('error-message').textContent = TEXTS[gameState.language].invalid_code;
+        return;
+    }
+
+    gameState.code = code;
+    const seed = parseInt(code, 10);
+    gameState.grid = generateDungeon(seed);
+    initGameUI();
+    showScreen('screen-game');
+}
+
+function initGameUI() {
+    document.getElementById('current-code').textContent = gameState.code;
+
+    // Create coordinate buttons
+    const colButtons = document.getElementById('col-buttons');
+    const rowButtons = document.getElementById('row-buttons');
+    colButtons.innerHTML = '';
+    rowButtons.innerHTML = '';
+
+    for (let i = 0; i < GRID_SIZE; i++) {
+        const colBtn = document.createElement('button');
+        colBtn.className = 'btn coord-btn';
+        colBtn.textContent = COLUMNS[i];
+        colBtn.onclick = () => selectCol(i);
+        colBtn.setAttribute('aria-label', `Column ${COLUMNS[i]}`);
+        colButtons.appendChild(colBtn);
+
+        const rowBtn = document.createElement('button');
+        rowBtn.className = 'btn coord-btn';
+        rowBtn.textContent = i + 1;
+        rowBtn.onclick = () => selectRow(i);
+        rowBtn.setAttribute('aria-label', `Row ${i + 1}`);
+        rowButtons.appendChild(rowBtn);
+    }
+
+    // Reset state
+    gameState.selectedCol = -1;
+    gameState.selectedRow = -1;
+    gameState.secretMode = false;
+    gameState.discovered = {};
+    gameState.mapRevealed = false;
+
+    // Initialize remaining counter
+    gameState.remaining = {
+        monster: 7,
+        chest: 7,
+        key: 7,
+        sword: 7,
+        potion: 7,
+        empty: 7,
+        trap: 3,
+        passage: 2,
+        sphere: 2
+    };
+
+    updateSelection();
+    updateSecretToggle();
+    updateDiscoveryGrid();
+    updateRemaining();
+}
+
+function selectCol(col) {
+    gameState.selectedCol = col;
+    document.querySelectorAll('#col-buttons .coord-btn').forEach((btn, idx) => {
+        btn.classList.toggle('selected', idx === col);
+    });
+    updateSelection();
+}
+
+function selectRow(row) {
+    gameState.selectedRow = row;
+    document.querySelectorAll('#row-buttons .coord-btn').forEach((btn, idx) => {
+        btn.classList.toggle('selected', idx === row);
+    });
+    updateSelection();
+}
+
+function updateSelection() {
+    const display = document.getElementById('selection-display');
+    if (gameState.selectedCol >= 0 && gameState.selectedRow >= 0) {
+        display.textContent = `${COLUMNS[gameState.selectedCol]}${gameState.selectedRow + 1}`;
+    } else {
+        display.textContent = '-';
+    }
+}
+
+function revealCell() {
+    if (gameState.selectedCol < 0 || gameState.selectedRow < 0) return;
+    if (gameState.mapRevealed) return;
+
+    const r = gameState.selectedRow;
+    const c = gameState.selectedCol;
+    const coordKey = `${r},${c}`;
+    const element = gameState.grid[r][c];
+    const texts = TEXTS[gameState.language];
+
+    const img = document.getElementById('reveal-img');
+    const emptyIcon = document.getElementById('reveal-empty-icon');
+    const name = document.getElementById('reveal-name');
+    const alert = document.getElementById('already-explored-alert');
+
+    // Check if already explored publicly
+    const previousDiscovery = gameState.discovered[coordKey];
+    if (previousDiscovery && previousDiscovery.isPublic) {
+        alert.textContent = texts.already_explored;
+        alert.style.display = 'block';
+    } else {
+        alert.style.display = 'none';
+    }
+
+    // Show the element
+    if (element === 'empty') {
+        img.style.display = 'none';
+        emptyIcon.style.display = 'block';
+        name.textContent = texts.empty;
+    } else {
+        img.src = IMAGES[element];
+        img.style.display = 'block';
+        emptyIcon.style.display = 'none';
+        name.textContent = texts[element];
+    }
+
+    document.getElementById('modal-reveal').classList.add('active');
+
+    // Update discovery state
+    const wasPubliclyDiscovered = previousDiscovery && previousDiscovery.isPublic;
+    const isPublic = !gameState.secretMode;
+
+    // If secret mode is off, or if upgrading from secret to public
+    if (isPublic && !wasPubliclyDiscovered) {
+        // Decrement remaining counter only for new public discoveries
+        if (!previousDiscovery && gameState.remaining[element] > 0) {
+            gameState.remaining[element]--;
+            updateRemaining();
+        } else if (previousDiscovery && !previousDiscovery.isPublic && gameState.remaining[element] > 0) {
+            // Upgrading from secret to public
+            gameState.remaining[element]--;
+            updateRemaining();
+        }
+    }
+
+    // Record discovery
+    gameState.discovered[coordKey] = {
+        element: element,
+        isPublic: isPublic || wasPubliclyDiscovered
+    };
+
+    updateDiscoveryGrid();
+}
+
+function closeReveal() {
+    document.getElementById('modal-reveal').classList.remove('active');
+}
+
+function toggleSecretMode() {
+    gameState.secretMode = !gameState.secretMode;
+    updateSecretToggle();
+}
+
+function updateSecretToggle() {
+    const toggle = document.getElementById('secret-toggle');
+    const container = document.getElementById('secret-mode-container');
+    toggle.classList.toggle('active', gameState.secretMode);
+    toggle.setAttribute('aria-checked', gameState.secretMode);
+    container.classList.toggle('active-mode', gameState.secretMode);
+}
+
+function updateDiscoveryGrid() {
+    const container = document.getElementById('discovery-grid-container');
+
+    let html = '<div class="discovery-col-labels">';
+    for (let c = 0; c < GRID_SIZE; c++) {
+        html += `<div class="discovery-col-label">${COLUMNS[c]}</div>`;
+    }
+    html += '</div>';
+
+    for (let r = 0; r < GRID_SIZE; r++) {
+        html += '<div class="discovery-row-wrapper">';
+        html += `<div class="discovery-row-label">${r + 1}</div>`;
+        html += '<div class="discovery-grid">';
+
+        for (let c = 0; c < GRID_SIZE; c++) {
+            const coordKey = `${r},${c}`;
+            const discovery = gameState.discovered[coordKey];
+
+            if (discovery) {
+                if (discovery.isPublic) {
+                    html += '<div class="discovery-cell revealed">';
+                    if (discovery.element === 'empty') {
+                        html += '<div class="empty-icon"></div>';
+                    } else {
+                        html += `<img src="${IMAGES[discovery.element]}" alt="${discovery.element}">`;
+                    }
+                    html += '</div>';
+                } else {
+                    // Secret discovery - show eye icon
+                    html += '<div class="discovery-cell secret">';
+                    html += '<div class="secret-icon"></div>';
+                    html += '</div>';
+                }
+            } else {
+                html += '<div class="discovery-cell">?</div>';
+            }
+        }
+
+        html += '</div></div>';
+    }
+
+    container.innerHTML = html;
+}
+
+function updateRemaining() {
+    const grid = document.getElementById('remaining-grid');
+    const texts = TEXTS[gameState.language];
+    grid.innerHTML = '';
+
+    const elements = ['monster', 'chest', 'key', 'sword', 'potion', 'trap', 'passage', 'sphere', 'empty'];
+
+    elements.forEach(elem => {
+        if (gameState.remaining[elem] !== undefined) {
+            const div = document.createElement('div');
+            div.className = 'remaining-item';
+
+            if (elem === 'empty') {
+                div.innerHTML = `<div class="empty-icon-small"></div><span class="remaining-count">${gameState.remaining[elem]}</span>`;
+            } else {
+                div.innerHTML = `<img src="${IMAGES[elem]}" alt="${texts[elem]}"><span class="remaining-count">${gameState.remaining[elem]}</span>`;
+            }
+
+            grid.appendChild(div);
+        }
+    });
+}
+
+function copyCode() {
+    navigator.clipboard.writeText(gameState.code).catch(() => {
+        // Fallback for older browsers
+        const input = document.createElement('input');
+        input.value = gameState.code;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+    });
+}
+
+let confirmCallback = null;
+
+function showFullMap() {
+    confirmCallback = () => {
+        gameState.mapRevealed = true;
+        const grid = document.getElementById('full-grid');
+        grid.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+        grid.innerHTML = '';
+
+        const texts = TEXTS[gameState.language];
+
+        for (let r = 0; r < GRID_SIZE; r++) {
+            for (let c = 0; c < GRID_SIZE; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+
+                const coord = document.createElement('span');
+                coord.className = 'coord';
+                coord.textContent = `${COLUMNS[c]}${r + 1}`;
+                cell.appendChild(coord);
+
+                const element = gameState.grid[r][c];
+                if (element === 'empty') {
+                    const emptyIcon = document.createElement('div');
+                    emptyIcon.className = 'empty-icon';
+                    cell.appendChild(emptyIcon);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = IMAGES[element];
+                    img.alt = texts[element];
+                    cell.appendChild(img);
+                }
+
+                grid.appendChild(cell);
+            }
+        }
+
+        showScreen('screen-full-map');
+    };
+
+    document.getElementById('confirm-message').textContent = TEXTS[gameState.language].show_map_confirm;
+    document.getElementById('modal-confirm').classList.add('active');
+}
+
+function confirmNewGame() {
+    confirmCallback = () => showStart();
+    document.getElementById('confirm-message').textContent = TEXTS[gameState.language].new_game_confirm;
+    document.getElementById('modal-confirm').classList.add('active');
+}
+
+function confirmAction() {
+    if (confirmCallback) {
+        confirmCallback();
+        confirmCallback = null;
+    }
+    closeConfirm();
+}
+
+function closeConfirm() {
+    document.getElementById('modal-confirm').classList.remove('active');
+}
+
+// Initialize
 updateLanguage();
     </script>
 </body>
