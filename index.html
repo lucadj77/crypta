@@ -32,20 +32,35 @@
         /* Discovery Grid */
         .discovery-section { background-color: #2d2d44; padding: 20px; border-radius: 5px; margin: 20px 0; }
         .discovery-section h3 { color: #c9a227; margin-bottom: 15px; text-align: center; }
-        .discovery-grid-container { display: flex; flex-direction: column; align-items: center; }
-        .discovery-col-labels { display: flex; margin-left: 30px; }
-        .discovery-col-label { width: 40px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
-        .discovery-row-wrapper { display: flex; align-items: center; }
-        .discovery-row-label { width: 25px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
-        .discovery-grid { display: grid; grid-template-columns: repeat(7, 40px); gap: 3px; }
-        .discovery-cell { width: 40px; height: 40px; background-color: #3d3d5c; border: 1px solid #8b7355; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #666; }
+        .discovery-grid-container { display: flex; justify-content: center; }
+        .discovery-board { display: inline-grid; gap: 3px; --dcell: 40px; }
+        .discovery-corner { width: var(--dcell); height: var(--dcell); }
+        .discovery-label { width: var(--dcell); height: var(--dcell); display: flex; align-items: center; justify-content: center; font-size: 0.9em; color: #c9a227; font-weight: bold; }
+        .discovery-cell { width: var(--dcell); height: var(--dcell); background-color: #3d3d5c; border: 1px solid #8b7355; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #666; position: relative; }
         .discovery-cell.revealed { background-color: #1a1a2e; }
         .discovery-cell.secret { background-color: #2a1a3e; border-color: #6a0dad; box-shadow: 0 0 6px rgba(106, 13, 173, 0.5); }
+        .discovery-cell.hypothesis { background-color: #1a1a2e; border: 2px dashed #c9a227; }
+        .discovery-cell.hypothesis img { opacity: 0.5; }
+        .discovery-cell.hypothesis .empty-icon { opacity: 0.5; }
+        .discovery-cell .hyp-badge { position: absolute; top: 0; right: 3px; font-size: 0.75em; color: #c9a227; font-weight: bold; }
         .discovery-cell img { max-width: 85%; max-height: 85%; object-fit: contain; }
         .discovery-cell .empty-icon { width: 14px; height: 14px; background-color: #666; border-radius: 50%; }
         .discovery-cell .secret-icon { width: 24px; height: 24px; position: relative; }
         .discovery-cell .secret-icon::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 12px; border: 2px solid #9b59b6; border-radius: 50%; }
         .discovery-cell .secret-icon::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background-color: #9b59b6; border-radius: 50%; }
+
+        /* Discovery controls & hypothesis palette */
+        .discovery-controls { text-align: center; margin-top: 12px; }
+        .discovery-controls .btn { min-width: 0; padding: 8px 18px; margin: 0; }
+        .action-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0; }
+        .action-buttons .btn { margin: 0; }
+        .hyp-coord { font-size: 1.3em; color: #c9a227; margin-bottom: 10px; font-family: 'Courier New', monospace; }
+        .hyp-palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+        .hyp-option { background-color: #3d3d5c; border: 1px solid #8b7355; border-radius: 5px; padding: 10px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: background-color 0.2s; }
+        .hyp-option:hover { background-color: #5c4033; }
+        .hyp-option img { width: 40px; height: 40px; object-fit: contain; }
+        .hyp-option .empty-icon-small { width: 24px; height: 24px; background-color: #666; border-radius: 50%; margin: 8px 0; }
+        .hyp-option span { font-size: 0.85em; color: #f0e6d3; }
 
         /* Secret Mode */
         .secret-mode { background-color: #2d2d44; padding: 15px; border-radius: 5px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
@@ -85,16 +100,10 @@
             h1 { font-size: 2em; margin-top: 50px; }
             .lang-selector { top: 10px; right: 10px; }
             .coord-btn { width: 40px; height: 40px; font-size: 1em; }
-            .discovery-cell { width: 36px; height: 36px; }
-            .discovery-grid { grid-template-columns: repeat(7, 36px); }
-            .discovery-col-label { width: 36px; }
-            .discovery-row-label { height: 36px; }
+            .discovery-board { --dcell: 36px; }
         }
         @media (max-width: 400px) {
-            .discovery-cell { width: 32px; height: 32px; }
-            .discovery-grid { grid-template-columns: repeat(7, 32px); }
-            .discovery-col-label { width: 32px; }
-            .discovery-row-label { height: 32px; }
+            .discovery-board { --dcell: 32px; }
         }
     </style>
 </head>
@@ -138,6 +147,9 @@
             <div class="discovery-section">
                 <h3 data-i18n="discovery_grid">Griglia di scoperta</h3>
                 <div class="discovery-grid-container" id="discovery-grid-container"></div>
+                <div class="discovery-controls">
+                    <button class="btn" onclick="rotateGrid()"><span data-i18n="rotate">Ruota</span> &#8635;</button>
+                </div>
             </div>
 
             <div class="coordinate-selector">
@@ -145,7 +157,10 @@
                 <div class="coord-buttons" id="col-buttons"></div>
                 <div class="coord-buttons" id="row-buttons"></div>
                 <div class="selection-display" id="selection-display">-</div>
-                <button class="btn confirm-btn" onclick="revealCell()" data-i18n="confirm">Conferma</button>
+                <div class="action-buttons">
+                    <button class="btn" onclick="revealCell()" data-i18n="confirm">Conferma</button>
+                    <button class="btn" onclick="openHypothesis()" data-i18n="add_hypothesis">Ipotesi</button>
+                </div>
             </div>
 
             <div class="secret-mode" id="secret-mode-container">
@@ -187,6 +202,18 @@
         </div>
     </div>
 
+    <div id="modal-hypothesis" class="modal">
+        <div class="modal-content">
+            <h2 data-i18n="hypothesis_title">La tua ipotesi</h2>
+            <div class="hyp-coord" id="hypothesis-coord"></div>
+            <div class="hyp-palette" id="hypothesis-palette"></div>
+            <div class="btn-group">
+                <button class="btn" onclick="clearHypothesis()" data-i18n="remove_hypothesis">Rimuovi ipotesi</button>
+                <button class="btn" onclick="closeHypothesis()" data-i18n="cancel">Annulla</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-confirm" class="modal">
         <div class="modal-content">
             <p id="confirm-message" style="font-size: 1.2em; margin: 20px 0;"></p>
@@ -202,7 +229,7 @@
 const IMAGES = {
     key: 'img/chiave.png',
     monster: 'img/mostro.png',
-    passage: 'img/passaggio.png',
+    diamond: 'img/diamante.png',
     potion: 'img/pozione.png',
     chest: 'img/scrigno.png',
     sphere: 'img/sfera.png',
@@ -233,13 +260,19 @@ const TEXTS = {
         invalid_code: 'Codice non valido (6 cifre)',
         select_cell: 'Seleziona una casella',
         already_explored: 'Questa casella è già stata esplorata!',
+        rotate: 'Ruota',
+        add_hypothesis: 'Ipotesi',
+        hypothesis_title: 'La tua ipotesi',
+        remove_hypothesis: 'Rimuovi ipotesi',
+        hypothesis_blocked: 'Casella già scoperta: ipotesi non disponibile',
+        select_first: 'Seleziona prima una casella',
         monster: 'Mostro',
         chest: 'Scrigno',
         key: 'Chiave',
         sword: 'Spada',
         potion: 'Pozione',
+        diamond: 'Diamante',
         trap: 'Trappola',
-        passage: 'Passaggio segreto',
         sphere: 'Sfera',
         empty: 'Vuoto'
     },
@@ -264,13 +297,19 @@ const TEXTS = {
         invalid_code: 'Invalid code (6 digits)',
         select_cell: 'Select a cell',
         already_explored: 'This cell was already explored!',
+        rotate: 'Rotate',
+        add_hypothesis: 'Guess',
+        hypothesis_title: 'Your guess',
+        remove_hypothesis: 'Remove guess',
+        hypothesis_blocked: 'Cell already revealed: guess not available',
+        select_first: 'Select a cell first',
         monster: 'Monster',
         chest: 'Chest',
         key: 'Key',
         sword: 'Sword',
         potion: 'Potion',
+        diamond: 'Diamond',
         trap: 'Trap',
-        passage: 'Secret passage',
         sphere: 'Sphere',
         empty: 'Empty'
     }
@@ -285,7 +324,9 @@ let gameState = {
     selectedRow: -1,
     secretMode: false,
     discovered: {}, // {coordKey: {element, isPublic}}
+    hypotheses: {}, // {coordKey: element} - player's own guesses (notes)
     remaining: {},
+    rotation: 0,    // discovery grid view rotation: 0 / 90 / 180 / 270 (clockwise)
     mapRevealed: false
 };
 
@@ -293,7 +334,10 @@ const GRID_SIZE = 7;
 const COLUMNS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 // Element types for sudoku structure
-const ELEMENT_TYPES = ['monster', 'chest', 'key', 'sword', 'potion', 'empty', 'other'];
+const ELEMENT_TYPES = ['monster', 'chest', 'key', 'sword', 'potion', 'diamond', 'other'];
+
+// Elements the player can guess in hypothesis mode
+const HYPOTHESIS_ELEMENTS = ['monster', 'chest', 'key', 'sword', 'potion', 'diamond', 'trap', 'sphere', 'empty'];
 
 // Mulberry32 PRNG
 function mulberry32(seed) {
@@ -320,19 +364,9 @@ function isAdjacent(r1, c1, r2, c2) {
     return Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1 && !(r1 === r2 && c1 === c2);
 }
 
-// Check if position is on edge
-function isOnEdge(r, c) {
-    return r === 0 || r === GRID_SIZE - 1 || c === 0 || c === GRID_SIZE - 1;
-}
-
 // Manhattan distance
 function manhattanDistance(r1, c1, r2, c2) {
     return Math.abs(r1 - r2) + Math.abs(c1 - c2);
-}
-
-// Check if two positions are on same diagonal
-function onSameDiagonal(r1, c1, r2, c2) {
-    return (c1 - r1 === c2 - r2) || (c1 + r1 === c2 + r2);
 }
 
 // Generate a valid Latin square (sudoku-like) placement
@@ -408,80 +442,54 @@ function validateChests(positions) {
 }
 
 // Assign subtypes to "other" cells
-function assignOtherSubtypes(otherPositions, random) {
-    // Need to assign: 3 traps, 2 spheres, 2 passages
+function assignOtherSubtypes(otherPositions, chestPositions, random) {
+    // Need to assign: 3 spheres, 2 traps, 2 empties
     // Constraints:
-    // - Spheres: same diagonal
-    // - Passages: Manhattan distance >= 4
-    // - Traps: not on edges
+    // - Spheres: no chest in the 8 adjacent cells
+    // - Traps: Manhattan distance >= 5 between the two (edges allowed)
+    // - Empties: remaining cells, no constraint
 
     const n = otherPositions.length;
     if (n !== 7) return null;
 
-    // Find all valid sphere pairs (same diagonal)
-    const spherePairs = [];
-    for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-            if (onSameDiagonal(otherPositions[i].r, otherPositions[i].c,
-                               otherPositions[j].r, otherPositions[j].c)) {
-                spherePairs.push([i, j]);
-            }
-        }
-    }
+    // Which "other" cells are eligible for a sphere (no adjacent chest)
+    const sphereOk = otherPositions.map(p =>
+        !chestPositions.some(ch => isAdjacent(p.r, p.c, ch.r, ch.c))
+    );
 
-    // Find all valid passage pairs (Manhattan >= 4)
-    const passagePairs = [];
+    // All trap pairs with Manhattan distance >= 5
+    const trapPairs = [];
     for (let i = 0; i < n; i++) {
         for (let j = i + 1; j < n; j++) {
             if (manhattanDistance(otherPositions[i].r, otherPositions[i].c,
-                                  otherPositions[j].r, otherPositions[j].c) >= 4) {
-                passagePairs.push([i, j]);
+                                  otherPositions[j].r, otherPositions[j].c) >= 5) {
+                trapPairs.push([i, j]);
             }
         }
     }
 
-    // Find all valid trap positions (not on edge)
-    const trapCandidates = [];
-    for (let i = 0; i < n; i++) {
-        if (!isOnEdge(otherPositions[i].r, otherPositions[i].c)) {
-            trapCandidates.push(i);
+    // Try each candidate trap pair; the remaining 5 cells must yield 3 spheres + 2 empties
+    const shuffledTrapPairs = shuffle(trapPairs, random);
+    for (const trapPair of shuffledTrapPairs) {
+        const used = new Set(trapPair);
+        const remaining = [];
+        for (let i = 0; i < n; i++) {
+            if (!used.has(i)) remaining.push(i);
         }
-    }
 
-    // Shuffle for randomness
-    const shuffledSpherePairs = shuffle(spherePairs, random);
-    const shuffledPassagePairs = shuffle(passagePairs, random);
+        // Pick 3 sphere-eligible cells from the remaining 5
+        const sphereCandidates = shuffle(remaining.filter(i => sphereOk[i]), random);
+        if (sphereCandidates.length < 3) continue;
 
-    // Try to find a valid assignment
-    for (const spherePair of shuffledSpherePairs) {
-        for (const passagePair of shuffledPassagePairs) {
-            // Check no overlap between spheres and passages
-            const usedIndices = new Set([...spherePair, ...passagePair]);
-            if (usedIndices.size !== 4) continue;
+        const sphereIdx = sphereCandidates.slice(0, 3);
+        const sphereSet = new Set(sphereIdx);
+        const emptyIdx = remaining.filter(i => !sphereSet.has(i));
 
-            // Remaining indices are trap candidates
-            const remainingIndices = [];
-            for (let i = 0; i < n; i++) {
-                if (!usedIndices.has(i)) remainingIndices.push(i);
-            }
-
-            // Check all remaining can be traps (not on edge)
-            let allTrapsValid = true;
-            for (const idx of remainingIndices) {
-                if (isOnEdge(otherPositions[idx].r, otherPositions[idx].c)) {
-                    allTrapsValid = false;
-                    break;
-                }
-            }
-
-            if (allTrapsValid && remainingIndices.length === 3) {
-                return {
-                    spheres: spherePair.map(i => otherPositions[i]),
-                    passages: passagePair.map(i => otherPositions[i]),
-                    traps: remainingIndices.map(i => otherPositions[i])
-                };
-            }
-        }
+        return {
+            spheres: sphereIdx.map(i => otherPositions[i]),
+            traps: trapPair.map(i => otherPositions[i]),
+            empties: emptyIdx.map(i => otherPositions[i])
+        };
     }
 
     return null;
@@ -514,28 +522,24 @@ function validateAllConstraints(grid, subtypes) {
 
     // 4. Validate subtypes if provided
     if (subtypes) {
-        // Spheres on same diagonal
-        if (subtypes.spheres.length === 2) {
-            if (!onSameDiagonal(subtypes.spheres[0].r, subtypes.spheres[0].c,
-                                subtypes.spheres[1].r, subtypes.spheres[1].c)) {
-                return { valid: false, reason: 'spheres not on diagonal' };
+        // Spheres: no chest in the 8 adjacent cells
+        for (const sphere of subtypes.spheres) {
+            for (const chest of positions.chest) {
+                if (isAdjacent(sphere.r, sphere.c, chest.r, chest.c)) {
+                    return { valid: false, reason: 'sphere adjacent to chest' };
+                }
             }
         }
 
-        // Passages Manhattan >= 4
-        if (subtypes.passages.length === 2) {
-            if (manhattanDistance(subtypes.passages[0].r, subtypes.passages[0].c,
-                                  subtypes.passages[1].r, subtypes.passages[1].c) < 4) {
-                return { valid: false, reason: 'passages too close' };
+        // Traps: Manhattan distance >= 5
+        if (subtypes.traps.length === 2) {
+            if (manhattanDistance(subtypes.traps[0].r, subtypes.traps[0].c,
+                                  subtypes.traps[1].r, subtypes.traps[1].c) < 5) {
+                return { valid: false, reason: 'traps too close' };
             }
         }
 
-        // Traps not on edge
-        for (const trap of subtypes.traps) {
-            if (isOnEdge(trap.r, trap.c)) {
-                return { valid: false, reason: 'trap on edge' };
-            }
-        }
+        // Empties: no constraint
     }
 
     return { valid: true };
@@ -552,7 +556,7 @@ function generateDungeon(baseSeed) {
         const positions = collectPositions(grid);
 
         // Try to assign subtypes to "other" cells
-        const subtypes = assignOtherSubtypes(positions.other, random);
+        const subtypes = assignOtherSubtypes(positions.other, positions.chest, random);
         if (!subtypes) continue;
 
         // Validate all constraints
@@ -564,11 +568,11 @@ function generateDungeon(baseSeed) {
         for (const sphere of subtypes.spheres) {
             finalGrid[sphere.r][sphere.c] = 'sphere';
         }
-        for (const passage of subtypes.passages) {
-            finalGrid[passage.r][passage.c] = 'passage';
-        }
         for (const trap of subtypes.traps) {
             finalGrid[trap.r][trap.c] = 'trap';
+        }
+        for (const empty of subtypes.empties) {
+            finalGrid[empty.r][empty.c] = 'empty';
         }
 
         return finalGrid;
@@ -601,6 +605,7 @@ function setLanguage(lang) {
         btn.classList.toggle('active', btn.textContent === lang.toUpperCase());
     });
     updateLanguage();
+    try { localStorage.setItem('crypta_lang', lang); } catch (e) { /* ignore */ }
 }
 
 function updateLanguage() {
@@ -663,6 +668,8 @@ function initGameUI() {
     gameState.selectedRow = -1;
     gameState.secretMode = false;
     gameState.discovered = {};
+    gameState.hypotheses = {};
+    gameState.rotation = 0;
     gameState.mapRevealed = false;
 
     // Initialize remaining counter
@@ -672,16 +679,20 @@ function initGameUI() {
         key: 7,
         sword: 7,
         potion: 7,
-        empty: 7,
-        trap: 3,
-        passage: 2,
-        sphere: 2
+        diamond: 7,
+        trap: 2,
+        sphere: 3,
+        empty: 2
     };
+
+    // Restore saved progress/notes for this game code, if any
+    loadState(gameState.code);
 
     updateSelection();
     updateSecretToggle();
     updateDiscoveryGrid();
     updateRemaining();
+    saveState();
 }
 
 function selectCol(col) {
@@ -770,7 +781,11 @@ function revealCell() {
         isPublic: isPublic || wasPubliclyDiscovered
     };
 
+    // A real discovery replaces any hypothesis on the same cell
+    delete gameState.hypotheses[coordKey];
+
     updateDiscoveryGrid();
+    saveState();
 }
 
 function closeReveal() {
@@ -780,6 +795,7 @@ function closeReveal() {
 function toggleSecretMode() {
     gameState.secretMode = !gameState.secretMode;
     updateSecretToggle();
+    saveState();
 }
 
 function updateSecretToggle() {
@@ -790,48 +806,177 @@ function updateSecretToggle() {
     container.classList.toggle('active-mode', gameState.secretMode);
 }
 
+// HTML for an element icon inside a discovery cell
+function elementIconHtml(element) {
+    if (element === 'empty') return '<div class="empty-icon"></div>';
+    return `<img src="${IMAGES[element]}" alt="${element}">`;
+}
+
+// HTML for a single discovery cell at logical (r, c)
+function renderDiscoveryCell(r, c) {
+    const coordKey = `${r},${c}`;
+    const discovery = gameState.discovered[coordKey];
+    const hypothesis = gameState.hypotheses[coordKey];
+
+    if (discovery) {
+        if (discovery.isPublic) {
+            return `<div class="discovery-cell revealed">${elementIconHtml(discovery.element)}</div>`;
+        }
+        // Secret discovery - show eye icon
+        return '<div class="discovery-cell secret"><div class="secret-icon"></div></div>';
+    }
+    if (hypothesis) {
+        // Player's own guess - dashed border + faded icon + "?" badge
+        return `<div class="discovery-cell hypothesis">${elementIconHtml(hypothesis)}<span class="hyp-badge">?</span></div>`;
+    }
+    return '<div class="discovery-cell">?</div>';
+}
+
+// Rotate a square matrix 90 degrees clockwise
+function rotateMatrixCW(m) {
+    const S = m.length;
+    const out = [];
+    for (let i = 0; i < S; i++) {
+        out[i] = [];
+        for (let j = 0; j < S; j++) out[i][j] = m[S - 1 - j][i];
+    }
+    return out;
+}
+
 function updateDiscoveryGrid() {
     const container = document.getElementById('discovery-grid-container');
+    const S = GRID_SIZE + 1;
 
-    let html = '<div class="discovery-col-labels">';
-    for (let c = 0; c < GRID_SIZE; c++) {
-        html += `<div class="discovery-col-label">${COLUMNS[c]}</div>`;
+    // Build a labelled token matrix (corner + column letters + row numbers + cells)
+    let tokens = [];
+    for (let i = 0; i < S; i++) {
+        tokens[i] = [];
+        for (let j = 0; j < S; j++) {
+            if (i === 0 && j === 0) tokens[i][j] = { t: 'corner' };
+            else if (i === 0) tokens[i][j] = { t: 'label', text: COLUMNS[j - 1] };
+            else if (j === 0) tokens[i][j] = { t: 'label', text: String(i) };
+            else tokens[i][j] = { t: 'cell', r: i - 1, c: j - 1 };
+        }
+    }
+
+    // Rotate the whole labelled matrix so labels turn together with the cells
+    const times = ((gameState.rotation % 360) / 90) | 0;
+    for (let k = 0; k < times; k++) tokens = rotateMatrixCW(tokens);
+
+    let html = `<div class="discovery-board" style="grid-template-columns: repeat(${S}, var(--dcell));">`;
+    for (let i = 0; i < S; i++) {
+        for (let j = 0; j < S; j++) {
+            const tk = tokens[i][j];
+            if (tk.t === 'corner') html += '<div class="discovery-corner"></div>';
+            else if (tk.t === 'label') html += `<div class="discovery-label">${tk.text}</div>`;
+            else html += renderDiscoveryCell(tk.r, tk.c);
+        }
     }
     html += '</div>';
 
-    for (let r = 0; r < GRID_SIZE; r++) {
-        html += '<div class="discovery-row-wrapper">';
-        html += `<div class="discovery-row-label">${r + 1}</div>`;
-        html += '<div class="discovery-grid">';
+    container.innerHTML = html;
+}
 
-        for (let c = 0; c < GRID_SIZE; c++) {
-            const coordKey = `${r},${c}`;
-            const discovery = gameState.discovered[coordKey];
+function rotateGrid() {
+    gameState.rotation = (gameState.rotation + 90) % 360;
+    updateDiscoveryGrid();
+    saveState();
+}
 
-            if (discovery) {
-                if (discovery.isPublic) {
-                    html += '<div class="discovery-cell revealed">';
-                    if (discovery.element === 'empty') {
-                        html += '<div class="empty-icon"></div>';
-                    } else {
-                        html += `<img src="${IMAGES[discovery.element]}" alt="${discovery.element}">`;
-                    }
-                    html += '</div>';
-                } else {
-                    // Secret discovery - show eye icon
-                    html += '<div class="discovery-cell secret">';
-                    html += '<div class="secret-icon"></div>';
-                    html += '</div>';
-                }
-            } else {
-                html += '<div class="discovery-cell">?</div>';
-            }
-        }
+// --- Hypothesis (notes) ---
+function openHypothesis() {
+    if (gameState.mapRevealed) return;
+    const texts = TEXTS[gameState.language];
+    const display = document.getElementById('selection-display');
 
-        html += '</div></div>';
+    if (gameState.selectedCol < 0 || gameState.selectedRow < 0) {
+        display.textContent = texts.select_first;
+        return;
+    }
+    const coordKey = `${gameState.selectedRow},${gameState.selectedCol}`;
+    const discovery = gameState.discovered[coordKey];
+    if (discovery && discovery.isPublic) {
+        display.textContent = texts.hypothesis_blocked;
+        return;
     }
 
-    container.innerHTML = html;
+    document.getElementById('hypothesis-coord').textContent =
+        `${COLUMNS[gameState.selectedCol]}${gameState.selectedRow + 1}`;
+    buildHypothesisPalette();
+    document.getElementById('modal-hypothesis').classList.add('active');
+}
+
+function buildHypothesisPalette() {
+    const texts = TEXTS[gameState.language];
+    const palette = document.getElementById('hypothesis-palette');
+    palette.innerHTML = '';
+
+    HYPOTHESIS_ELEMENTS.forEach(elem => {
+        const opt = document.createElement('div');
+        opt.className = 'hyp-option';
+        opt.onclick = () => setHypothesis(elem);
+        const icon = elem === 'empty'
+            ? '<div class="empty-icon-small"></div>'
+            : `<img src="${IMAGES[elem]}" alt="${texts[elem]}">`;
+        opt.innerHTML = `${icon}<span>${texts[elem]}</span>`;
+        palette.appendChild(opt);
+    });
+}
+
+function setHypothesis(elem) {
+    if (gameState.selectedCol < 0 || gameState.selectedRow < 0) return;
+    const coordKey = `${gameState.selectedRow},${gameState.selectedCol}`;
+    gameState.hypotheses[coordKey] = elem;
+    closeHypothesis();
+    updateDiscoveryGrid();
+    saveState();
+}
+
+function clearHypothesis() {
+    if (gameState.selectedCol < 0 || gameState.selectedRow < 0) return;
+    const coordKey = `${gameState.selectedRow},${gameState.selectedCol}`;
+    delete gameState.hypotheses[coordKey];
+    closeHypothesis();
+    updateDiscoveryGrid();
+    saveState();
+}
+
+function closeHypothesis() {
+    document.getElementById('modal-hypothesis').classList.remove('active');
+}
+
+// --- Persistence (per game code) ---
+const SAVE_PREFIX = 'crypta_save_';
+
+function saveState() {
+    if (!gameState.code) return;
+    try {
+        localStorage.setItem(SAVE_PREFIX + gameState.code, JSON.stringify({
+            discovered: gameState.discovered,
+            hypotheses: gameState.hypotheses,
+            remaining: gameState.remaining,
+            rotation: gameState.rotation,
+            secretMode: gameState.secretMode,
+            mapRevealed: gameState.mapRevealed
+        }));
+    } catch (e) { /* storage unavailable - ignore */ }
+}
+
+function loadState(code) {
+    try {
+        const raw = localStorage.getItem(SAVE_PREFIX + code);
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        gameState.discovered = s.discovered || {};
+        gameState.hypotheses = s.hypotheses || {};
+        if (s.remaining) gameState.remaining = s.remaining;
+        gameState.rotation = s.rotation || 0;
+        gameState.secretMode = !!s.secretMode;
+        gameState.mapRevealed = !!s.mapRevealed;
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 function updateRemaining() {
@@ -839,7 +984,7 @@ function updateRemaining() {
     const texts = TEXTS[gameState.language];
     grid.innerHTML = '';
 
-    const elements = ['monster', 'chest', 'key', 'sword', 'potion', 'trap', 'passage', 'sphere', 'empty'];
+    const elements = ['monster', 'chest', 'key', 'sword', 'potion', 'diamond', 'trap', 'sphere', 'empty'];
 
     elements.forEach(elem => {
         if (gameState.remaining[elem] !== undefined) {
@@ -874,6 +1019,7 @@ let confirmCallback = null;
 function showFullMap() {
     confirmCallback = () => {
         gameState.mapRevealed = true;
+        saveState();
         const grid = document.getElementById('full-grid');
         grid.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
         grid.innerHTML = '';
@@ -932,7 +1078,14 @@ function closeConfirm() {
 }
 
 // Initialize
-updateLanguage();
+(function init() {
+    let lang = 'it';
+    try {
+        const saved = localStorage.getItem('crypta_lang');
+        if (saved === 'it' || saved === 'en') lang = saved;
+    } catch (e) { /* ignore */ }
+    setLanguage(lang);
+})();
     </script>
 </body>
 </html>
