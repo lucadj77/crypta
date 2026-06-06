@@ -47,10 +47,10 @@ The dungeon follows a **sudoku-like structure**: each element type appears exact
 | Keys | 7 | One per row, one per column |
 | Swords | 7 | One per row, one per column |
 | Potions | 7 | One per row, one per column |
-| Empty | 7 | One per row, one per column |
-| Other | 7 | One per row, one per column (contains: 3 traps, 2 spheres, 2 passages) |
+| Diamonds | 7 | One per row, one per column |
+| Other | 7 | One per row, one per column (contains: 3 spheres, 2 traps, 2 empty) |
 
-**Total: 49 cells** (7×7 grid)
+**Total: 49 cells** (7×7 grid). There are only **2 empty cells** in total (both inside "Other").
 
 ## Generation Algorithm
 
@@ -60,7 +60,7 @@ The 6-digit game code (000000-999999) serves as the seed for a pseudo-random num
 
 ### Sudoku Constraint
 
-Every element type (Monster, Chest, Key, Sword, Potion, Empty, Other) must appear **exactly once in each row** and **exactly once in each column**. This is the primary constraint that governs placement.
+Every element type (Monster, Chest, Key, Sword, Potion, Diamond, Other) must appear **exactly once in each row** and **exactly once in each column**. This is the primary constraint that governs placement.
 
 ### Placement Order (by constraint complexity)
 
@@ -71,22 +71,22 @@ Place elements in this order, respecting sudoku constraints throughout:
 3. **Swords** (7) - sudoku only, no additional adjacency constraints
 4. **Keys** (7) - sudoku only, no additional adjacency constraints
 5. **Potions** (7) - sudoku only, no additional adjacency constraints
-6. **Empty** (7) - sudoku only, no additional adjacency constraints
+6. **Diamonds** (7) - sudoku only, no additional adjacency constraints
 7. **Other** (7) - remaining cells, then assign subtypes
 
 ### "Other" Category Subtype Assignment
 
-After placing all 7 "Other" cells, assign subtypes (3 traps, 2 spheres, 2 passages) with these constraints:
+After placing all 7 "Other" cells, assign subtypes (3 spheres, 2 traps, 2 empty) with these constraints:
 
-- **Spheres** (2): must be on the same diagonal (same `col - row` value OR same `col + row` value)
-- **Passages** (2): Manhattan distance ≥ 4 between them (`|col1-col2| + |row1-row2| ≥ 4`)
-- **Traps** (3): must be on internal cells only (rows 2-6, columns B-F; never on edges)
+- **Spheres** (3): free placement, but **no chest** may occupy any of the 8 cells adjacent to a sphere
+- **Traps** (2): may be placed anywhere (edges allowed), but the two traps must be at Manhattan distance ≥ 5 (`|col1-col2| + |row1-row2| ≥ 5`)
+- **Empty** (2): the remaining "Other" cells, no additional constraint
 
 Algorithm for subtype assignment:
-1. Find all pairs of "Other" positions that share a diagonal → candidate sphere pairs
-2. Find all pairs with Manhattan distance ≥ 4 → candidate passage pairs
-3. Find all "Other" positions not on edges → candidate trap positions
-4. Find a valid assignment where: 2 spheres + 2 passages + 3 traps = 7, all positions distinct, all constraints met
+1. Mark "Other" positions with no adjacent chest → sphere-eligible positions
+2. Find all pairs of "Other" positions with Manhattan distance ≥ 5 → candidate trap pairs
+3. For a candidate trap pair, the remaining 5 positions must contain ≥3 sphere-eligible ones
+4. Assign 3 spheres (from eligible) + 2 traps + 2 empty = 7, all positions distinct, all constraints met
 
 ### Placement Constraints Summary
 
@@ -97,14 +97,14 @@ Algorithm for subtype assignment:
 | Swords | ✓ | None |
 | Keys | ✓ | None |
 | Potions | ✓ | None |
-| Empty | ✓ | None |
+| Diamonds | ✓ | None |
 | Other | ✓ | See subtype constraints below |
 
 | Subtype | Constraint |
 |---------|-----------|
-| Spheres | Same diagonal |
-| Passages | Manhattan distance ≥ 4 |
-| Traps | Not on grid edges |
+| Spheres | No chest in the 8 adjacent cells |
+| Traps | Manhattan distance ≥ 5 between the two |
+| Empty | None |
 
 ### Post-Generation Validation
 
@@ -113,9 +113,8 @@ Algorithm for subtype assignment:
 1. Sudoku check: each element type appears exactly once per row and column
 2. Monsters: no two monsters are adjacent
 3. Chests: every chest has at least one adjacent monster
-4. Spheres: both spheres are on the same diagonal
-5. Passages: Manhattan distance between passages ≥ 4
-6. Traps: no trap is on an edge cell
+4. Spheres: no sphere has an adjacent chest (8 directions)
+5. Traps: Manhattan distance between the two traps ≥ 5
 
 **If ANY constraint fails**: discard the layout and regenerate with the same seed but using an internal retry counter as offset.
 
@@ -181,14 +180,16 @@ Dark dungeon fantasy atmosphere with colors suggesting underground exploration.
 
 - `chiave.png` (Key)
 - `mostro.png` (Monster)
-- `passaggio.png` (Secret Passage)
+- `diamante.png` (Diamond - replaces the old "empty" element type)
 - `pozione.png` (Potion)
 - `scrigno.png` (Chest)
 - `sfera.png` (Sphere)
 - `spada.png` (Sword)
 - `trappola.png` (Trap)
-- `segreto.png` (Secret - eye icon for cells seen only by one player)
-- `vuoto.png` or CSS icon (Empty - gray circle or similar)
+- Secret discovery icon (eye): drawn with CSS, no image needed
+- Empty: drawn with CSS (gray circle), no image needed
+
+> Note: the current app references images by path (`img/*.png`), not Base64. `passaggio.png` is no longer used (secret passages were removed).
 
 ## Game Features
 
@@ -263,6 +264,28 @@ Shows icons with counts for undiscovered elements:
 - Displays entire grid with all elements revealed
 - Disables further queries (game is compromised)
 - Useful for end-game verification or debugging
+
+### Grid Rotation
+
+- A "Ruota / Rotate" button rotates the **discovery grid (and its row/column labels)** in 90° steps (0 → 90 → 180 → 270 → 0).
+- Purpose: a player sitting on the opposite side of the physical board can rotate the on-screen grid so its orientation matches what they see.
+- Rotation is **view-only**: it does not change the layout, the seed, or which cell a coordinate refers to. The coordinate-selection buttons (A-G / 1-7) are not rotated.
+- Implementation: a labelled `(N+1)×(N+1)` token matrix (corner + column letters + row numbers + cells) is rotated as a whole, so labels always stay attached to their cells.
+
+### Hypothesis (Notes) Mode
+
+- An "Ipotesi / Guess" button lets a player record their **own supposition** for a cell instead of revealing the real content.
+- Selecting a coordinate and pressing the button opens a **palette of element icons** (monster, chest, key, sword, potion, diamond, trap, sphere, empty) plus a "remove guess" option.
+- Hypothesis cells are shown distinctly (dashed gold border, faded icon, "?" badge) so they are clearly **not** real discoveries.
+- Hypotheses do **not** affect the "remaining" counter.
+- A real discovery on a cell **replaces** any hypothesis there. A guess cannot be placed on a cell already publicly discovered.
+- This lets the app double as a personal notepad (each player on their own phone).
+
+### Persistence
+
+- Game progress (discoveries, hypotheses, remaining counts, rotation, secret/map state) is saved to `localStorage`, keyed by game code (`crypta_save_<code>`).
+- Re-entering the same code restores the saved state on that device. The layout itself is never stored — it is regenerated deterministically from the code.
+- The selected language is persisted globally (`crypta_lang`).
 
 ## Screen Layouts
 
@@ -489,15 +512,12 @@ Each of the 7 element types appears exactly **once per row** and **once per colu
 |---------|----------------------|
 | Monsters | Not adjacent to each other (8 directions) |
 | Chests | Must have ≥1 adjacent monster |
-| Spheres | Both on same diagonal |
-| Passages | Manhattan distance ≥ 4 |
-| Traps | Not on edge cells (rows 1,7 or columns A,G) |
-| Swords, Keys, Potions, Empty | Sudoku only |
+| Spheres | No chest in the 8 adjacent cells |
+| Traps | Manhattan distance ≥ 5 between the two |
+| Swords, Keys, Potions, Diamonds, Empty | Sudoku only (Empty is a subtype of "Other") |
 
 ### Distance Formulas
 
 - **Manhattan**: `|col1-col2| + |row1-row2|`
 - **Chebyshev** (adjacency): `max(|col1-col2|, |row1-row2|)`
-- **Same diagonal**: `(col1-row1) === (col2-row2)` OR `(col1+row1) === (col2+row2)`
 - **Adjacency check**: Chebyshev distance = 1
-- **Edge check**: row = 0 OR row = 6 OR col = 0 OR col = 6 (0-indexed)
